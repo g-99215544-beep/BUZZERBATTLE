@@ -316,6 +316,14 @@ textarea.bb-input { resize: vertical; }
   background: var(--card); border-radius: 10px; padding: 6px 14px;
   font-size: 13px;
 }
+.scoreboard-center {
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.scoreboard-chip-big {
+  background: var(--card); border-radius: 16px; padding: 12px 24px;
+  display: flex; align-items: center; gap: 12px; min-width: 140px;
+}
 .question-display {
   background: var(--card); border-radius: 24px; padding: 32px 40px;
   border: 1px solid var(--border); width: 100%; margin-bottom: 24px;

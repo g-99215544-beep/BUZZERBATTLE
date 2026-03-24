@@ -207,22 +207,29 @@ BB.ui.hostLive = function (roomData) {
 
   if (!q) return '<div class="screen-live-host">Tiada soalan.</div>';
 
-  // Scoreboard
+  // Scoreboard - prominent centered
   var sb = '';
   sorted.forEach(function (p, i) {
-    sb += '<div class="scoreboard-chip" style="border:1px solid ' + (BB.SLOT_COLORS[i] || 'var(--border)') + '"><span style="font-weight:700">' + BB.esc(p.name) + '</span> <span style="color:var(--accent3);font-weight:800">' + p.score + '</span></div>';
+    var chipColor = BB.SLOT_COLORS[i] || 'var(--border)';
+    sb += '<div class="scoreboard-chip-big" style="border:2px solid ' + chipColor + ';box-shadow:0 0 15px ' + chipColor + '33">' +
+      '<span style="font-size:20px">' + BB.PLAYER_EMOJIS[i] + '</span>' +
+      '<div style="text-align:center"><span style="font-weight:700;font-size:15px;display:block">' + BB.esc(p.name) + '</span>' +
+      '<span class="font-bungee" style="font-size:28px;color:var(--accent3)">' + p.score + '</span></div></div>';
   });
 
-  // Options
+  // Options - uniform color, highlight correct/wrong after answer
   var opts = '';
   q.options.forEach(function (opt, oi) {
     var isCorrect = lastAnswer && oi === q.correctIndex;
     var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
-    opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + (isCorrect ? 'rgba(0,230,118,0.13)' : isWrong ? 'rgba(255,62,108,0.13)' : BB.OPT_COLORS[oi] + '11') + ';border-color:' + (isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : BB.OPT_COLORS[oi]) + '">' +
-      '<span class="option-label" style="color:' + BB.OPT_COLORS[oi] + '">' + BB.OPT_LABELS[oi] + '</span>' +
+    var bgColor = isCorrect ? 'rgba(0,230,118,0.15)' : isWrong ? 'rgba(255,62,108,0.15)' : 'rgba(0,229,255,0.06)';
+    var borderColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
+    var labelColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
+    opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + bgColor + ';border-color:' + borderColor + '">' +
+      '<span class="option-label" style="color:' + labelColor + '">' + BB.OPT_LABELS[oi] + '</span>' +
       '<span class="option-text">' + BB.esc(opt) + '</span>' +
-      (isCorrect ? '<span style="margin-left:auto;font-size:20px">✓</span>' : '') +
-      (isWrong ? '<span style="margin-left:auto;font-size:20px">✗</span>' : '') +
+      (isCorrect ? '<span style="margin-left:auto;font-size:20px;color:var(--success)">✓</span>' : '') +
+      (isWrong ? '<span style="margin-left:auto;font-size:20px;color:var(--danger)">✗</span>' : '') +
     '</div>';
   });
 
@@ -246,8 +253,8 @@ BB.ui.hostLive = function (roomData) {
   }
 
   return '<div class="screen-live-host">' + BB.ui.fsBtn() +
-    '<div class="live-topbar"><div style="display:flex;align-items:center;gap:12px"><span class="live-tag">⚡ LIVE</span><span style="color:var(--text-dim);font-size:13px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
-      '<div class="scoreboard-mini">' + sb + '</div></div>' +
+    '<div style="text-align:center;margin-bottom:8px"><span class="live-tag">⚡ LIVE</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
+    '<div class="scoreboard-center">' + sb + '</div>' +
     '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
       '<div class="question-display"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '</p>' +
         '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
@@ -305,8 +312,8 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
   if (iWon && status === "buzzed") {
     var opts = '';
     q.options.forEach(function (opt, oi) {
-      opts += '<button class="answer-option-btn" onclick="BB.app.answer(' + oi + ')" style="background:' + BB.OPT_COLORS[oi] + '0d;border-color:' + BB.OPT_COLORS[oi] + '">' +
-        '<span class="font-bungee" style="font-size:20px;color:' + BB.OPT_COLORS[oi] + ';width:36px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' + BB.esc(opt) + '</button>';
+      opts += '<button class="answer-option-btn" onclick="BB.app.answer(' + oi + ')" style="background:rgba(0,229,255,0.06);border-color:var(--accent2)">' +
+        '<span class="font-bungee" style="font-size:20px;color:var(--accent2);width:36px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' + BB.esc(opt) + '</button>';
     });
     return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:500px">' +
       '<div style="font-size:48px;margin-bottom:8px">🔥</div>' +
@@ -318,7 +325,27 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
   // Answer revealed
   if (lastAnswer) {
     var myAnswer = lastAnswer.playerId === playerId;
-    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center">' +
+    // Show all options with correct/wrong highlighting
+    var revealOpts = '';
+    q.options.forEach(function (opt, oi) {
+      var isCorrectOpt = oi === q.correctIndex;
+      var isSelectedWrong = lastAnswer.selectedIndex === oi && !lastAnswer.correct;
+      var optStyle = '';
+      var optIcon = '';
+      if (isCorrectOpt) {
+        optStyle = 'background:rgba(0,230,118,0.15);border-color:var(--success);color:var(--success)';
+        optIcon = '<span style="margin-left:auto;font-size:20px;color:var(--success)">✓</span>';
+      } else if (isSelectedWrong) {
+        optStyle = 'background:rgba(255,62,108,0.15);border-color:var(--danger);color:var(--danger);animation:wrongShake 0.5s ease';
+        optIcon = '<span style="margin-left:auto;font-size:20px;color:var(--danger)">✗</span>';
+      } else {
+        optStyle = 'background:var(--card);border-color:var(--border);opacity:0.5';
+      }
+      revealOpts += '<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:14px;border:2px solid;' + optStyle + '">' +
+        '<span class="font-bungee" style="font-size:18px;width:36px;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span style="font-weight:600;font-size:16px">' + BB.esc(opt) + '</span>' + optIcon + '</div>';
+    });
+    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:500px">' +
       '<div style="font-size:64px;margin-bottom:16px">' + (myAnswer ? (lastAnswer.correct ? '🎉' : '😢') : '📊') + '</div>' +
       (myAnswer ?
         '<p class="font-bungee" style="font-size:28px;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + (lastAnswer.correct ? 'BETUL!' : 'SALAH!') + '</p>' +
@@ -326,6 +353,7 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
         :
         '<p style="font-size:18px;font-weight:700">' + BB.esc(lastAnswer.playerName) + ' ' + (lastAnswer.correct ? 'menjawab betul!' : 'menjawab salah!') + '</p>'
       ) +
+      '<div class="flex flex-col gap-10" style="margin-top:20px;text-align:left">' + revealOpts + '</div>' +
       '<div style="margin-top:24px;background:var(--card);border-radius:14px;padding:12px 24px;border:1px solid var(--border);display:inline-block"><span style="color:var(--text-dim);font-size:13px">Markah: </span><span class="font-bungee" style="font-size:22px;color:var(--accent3)">' + myScore + '</span></div>' +
       '<p style="color:var(--text-dim);font-size:13px;margin-top:16px">Menunggu soalan seterusnya...</p></div></div>';
   }
