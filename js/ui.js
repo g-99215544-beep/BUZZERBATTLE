@@ -119,7 +119,10 @@ BB.ui.editor = function (title, questions, isEdit) {
       '<div style="margin-bottom:28px"><label style="color:var(--text-dim);font-size:13px;font-weight:600;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Tajuk Quiz</label>' +
         '<input class="bb-input" id="quizTitle" placeholder="cth: Matematik Tahun 4" value="' + BB.esc(title) + '" oninput="BB.app.state.editorTitle=this.value" style="font-size:18px;font-weight:600"></div>' +
       qs +
-      '<button class="bb-btn" onclick="BB.app.addQ()" style="background:transparent;color:var(--accent2);border:2px dashed var(--accent2);font-size:15px;padding:18px 0;width:100%;border-radius:16px;margin-bottom:20px">' + BB.SVG.plus + ' Tambah Soalan</button>' +
+      '<div style="display:flex;gap:12px;margin-bottom:20px">' +
+        '<button class="bb-btn" onclick="BB.app.addQ()" style="flex:1;background:transparent;color:var(--accent2);border:2px dashed var(--accent2);font-size:15px;padding:18px 0;border-radius:16px">' + BB.SVG.plus + ' Tambah Soalan</button>' +
+        '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px rgba(156,39,176,0.3)">🤖 Jana AI</button>' +
+      '</div>' +
       '<button class="bb-btn" id="saveBtn" onclick="BB.app.saveQuiz()" style="font-size:17px;padding:16px 0;width:100%">💾 Simpan (' + questions.length + ' soalan)</button>' +
     '</div></div>';
 };
@@ -397,6 +400,29 @@ BB.ui.results = function (roomData, isHost) {
         '<button class="bb-btn" onclick="BB.app.backToDashboard()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#000;font-size:16px;padding:16px 40px;box-shadow:var(--glow-cyan)">🏠 Kembali ke Dashboard</button>' :
         '<p style="color:var(--text-dim);font-size:15px;font-weight:600">🎮 Terima kasih bermain!</p>') +
     '</div></div>';
+};
+
+// ─── AI Generate Modal ───
+BB.ui.aiModal = function () {
+  return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
+    '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">' +
+      '<div style="font-size:48px;margin-bottom:12px">🤖</div>' +
+      '<h3 style="font-size:20px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#9c27b0,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Jana Soalan AI</h3>' +
+      '<p style="color:var(--text-dim);font-size:13px;margin-bottom:24px">Powered by Gemini</p>' +
+      '<div style="text-align:left;width:100%">' +
+        '<label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Topik / Prompt</label>' +
+        '<input class="bb-input" id="aiTopic" placeholder="cth: Matematik Tambah Tahun 2" style="margin-bottom:16px;font-size:15px">' +
+        '<div style="display:flex;gap:12px;margin-bottom:20px">' +
+          '<div style="flex:1"><label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Bilangan Soalan</label>' +
+            '<select class="bb-input" id="aiNum" style="font-size:15px;padding:10px 14px"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>' +
+          '<div style="flex:1"><label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Bahasa</label>' +
+            '<select class="bb-input" id="aiLang" style="font-size:15px;padding:10px 14px"><option value="Malay" selected>Bahasa Melayu</option><option value="English">English</option></select></div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:12px;width:100%">' +
+        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:14px 0;font-size:15px">Batal</button>' +
+        '<button class="bb-btn" id="aiGenBtn" onclick="BB.app.generateAI()" style="flex:1;background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;padding:14px 0;font-size:15px">🤖 Jana Soalan</button>' +
+      '</div></div></div>';
 };
 
 // ─── Delete Modal ───

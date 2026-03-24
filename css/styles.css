@@ -162,6 +162,13 @@ textarea.bb-input { resize: vertical; }
   animation: slideUp 0.3s ease;
   text-align: center;
 }
+.loading-spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.6s linear infinite; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ═══════════════════════════════════════
    SCREEN: LANDING
