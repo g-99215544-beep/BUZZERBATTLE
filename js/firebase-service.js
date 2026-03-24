@@ -18,7 +18,18 @@
       auth.onAuthStateChanged(cb);
     },
     loginGoogle: function () {
-      return auth.signInWithPopup(provider);
+      return auth.signInWithPopup(provider).catch(function (err) {
+        // If popup blocked or unauthorized domain, try redirect
+        if (err.code === "auth/unauthorized-domain" ||
+            err.code === "auth/popup-blocked" ||
+            err.code === "auth/popup-closed-by-user") {
+          return auth.signInWithRedirect(provider);
+        }
+        throw err;
+      });
+    },
+    handleRedirectResult: function () {
+      return auth.getRedirectResult();
     },
     logout: function () {
       return auth.signOut();
