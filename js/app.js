@@ -375,6 +375,13 @@
     var pts = q.points || 10;
     var delta = correct ? pts : -Math.floor(pts / 2);
 
+    // Play sound effect
+    if (!correct) {
+      BB.playWrongBuzzer();
+    } else {
+      BB.playCorrectSound();
+    }
+
     await BB.fire.updateScore(S.roomCode, S.playerId, delta);
     var players = S.roomData.players || {};
     await BB.fire.updateRoom(S.roomCode, {
