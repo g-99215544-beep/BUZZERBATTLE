@@ -254,8 +254,8 @@
           return { question: q.question, options: q.options, correctIndex: q.correctIndex, points: q.points || 10 };
         }),
       });
-      S.roomCode = code; S.quizTitle = qs.title;
       listenRoom(code);
+      S.roomCode = code; S.quizTitle = qs.title;
       S.screen = "hostWaiting"; render();
       showToast("Room " + code + " dibuat!");
     } catch (e) { console.error(e); showToast("Gagal buat room.", "error"); }
@@ -335,9 +335,10 @@
       var cnt = data.players ? Object.keys(data.players).length : 0;
       if (cnt >= (data.maxPlayers || 3)) { showToast("Room penuh!", "error"); S.screen = "landing"; render(); return; }
 
-      var pid = await BB.fire.addPlayer(S.roomCode, name);
-      S.playerId = pid; S.playerName = name;
-      listenRoom(S.roomCode);
+      var roomCode = S.roomCode;
+      var pid = await BB.fire.addPlayer(roomCode, name);
+      listenRoom(roomCode);
+      S.roomCode = roomCode; S.playerId = pid; S.playerName = name;
       S.screen = "playerWaiting"; render();
       showToast("Selamat datang, " + name + "!");
     } catch (e) { showToast("Gagal join.", "error"); }
