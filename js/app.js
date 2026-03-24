@@ -184,6 +184,37 @@
     S.screen = "editor"; render();
   };
 
+  // AI Quiz Generation
+  BB.app.showAiModal = function () {
+    showModal(BB.ui.aiModal());
+  };
+  BB.app.generateAI = async function () {
+    var topicEl = document.getElementById("aiTopic");
+    var numEl = document.getElementById("aiNum");
+    var langEl = document.getElementById("aiLang");
+    var btn = document.getElementById("aiGenBtn");
+    var topic = topicEl ? topicEl.value.trim() : "";
+    var num = numEl ? parseInt(numEl.value) || 5 : 5;
+    var lang = langEl ? langEl.value : "Malay";
+    if (!topic) { showToast("Sila masukkan topik.", "error"); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Menjana soalan...';
+    try {
+      var questions = await BB.fire.generateQuiz(topic, num, lang);
+      S.editorTitle = S.editorTitle || topic;
+      S.editorQuestions = S.editorQuestions.concat(questions);
+      BB.app.closeModal();
+      render();
+      showToast(questions.length + " soalan dijana oleh AI!");
+    } catch (e) {
+      console.error("AI generate error:", e);
+      showToast("Gagal menjana: " + (e.message || "Cuba lagi."), "error");
+      btn.disabled = false;
+      btn.innerHTML = '🤖 Jana Soalan';
+    }
+  };
+
   // Editor actions
   BB.app.addQ = function () {
     S.editorQuestions.push({ question: "", options: ["", "", "", ""], correctIndex: 0, points: 10 });

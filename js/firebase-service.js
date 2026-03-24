@@ -126,5 +126,12 @@
       var ref = db.ref("buzzerBattle/rooms/" + code + "/players/" + playerId + "/score");
       return ref.transaction(function (current) { return (current || 0) + delta; });
     },
+
+    // ─── AI QUIZ GENERATION ───
+    generateQuiz: function (topic, numberOfQuestions, language) {
+      var fn = firebase.functions().httpsCallable("generateQuiz");
+      return fn({ topic: topic, numberOfQuestions: numberOfQuestions, language: language })
+        .then(function (result) { return result.data.questions; });
+    },
   };
 })();
