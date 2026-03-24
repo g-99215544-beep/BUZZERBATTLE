@@ -153,7 +153,12 @@
     try {
       await BB.fire.loginGoogle();
     } catch (e) {
-      showToast("Login gagal.", "error");
+      console.error("Login error:", e.code, e.message);
+      if (e.code === "auth/unauthorized-domain") {
+        showToast("Domain tidak dibenarkan. Sila hubungi admin.", "error");
+      } else {
+        showToast("Login gagal: " + (e.message || "Cuba lagi."), "error");
+      }
     }
   };
   BB.app.logout = async function () {
@@ -403,6 +408,14 @@
   // ═══════════════════════════════════════
   function init() {
     BB.fire.init();
+    // Handle redirect login result (if user was redirected for auth)
+    BB.fire.handleRedirectResult().catch(function (e) {
+      if (e.code === "auth/unauthorized-domain") {
+        showToast("Domain tidak dibenarkan untuk login. Hubungi admin.", "error");
+      } else if (e.code) {
+        console.error("Redirect auth error:", e.code, e.message);
+      }
+    });
     BB.fire.onAuthChange(function (user) {
       S.user = user;
       if (user) {
