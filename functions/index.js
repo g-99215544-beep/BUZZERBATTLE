@@ -36,7 +36,7 @@ exports.generateQuiz = onRequest(
       return;
     }
 
-    const { topic, numberOfQuestions, language } = req.body;
+    const { topic, numberOfQuestions, language, year, level } = req.body;
 
     if (!topic || typeof topic !== "string" || topic.trim().length < 2) {
       res.status(400).json({ error: "Sila masukkan topik yang sah." });
@@ -45,14 +45,29 @@ exports.generateQuiz = onRequest(
 
     const numQ = Math.min(Math.max(parseInt(numberOfQuestions) || 5, 1), 20);
     const lang = language || "Malay";
+    const studentYear = year || "Tahun 4";
+    const diffLevel = level || "Sederhana";
+
+    // Map difficulty level
+    const difficultyMap = {
+      "Mudah": "easy (basic recall, simple facts, straightforward questions)",
+      "Sederhana": "medium (requires understanding, some application of concepts)",
+      "Susah": "hard (requires analysis, critical thinking, tricky options that test deep understanding)",
+    };
+    const diffDesc = difficultyMap[diffLevel] || difficultyMap["Sederhana"];
 
     const prompt = `Generate a quiz about "${topic.trim()}" with exactly ${numQ} multiple choice questions.
+
+Target student: ${studentYear} (Malaysian education system - KSSR/KSSM curriculum)
+Difficulty: ${diffLevel} - ${diffDesc}
 
 Rules:
 - Each question must have exactly 4 options (A, B, C, D)
 - Only ONE correct answer per question
 - Questions should be in ${lang} language
-- Difficulty: suitable for school students
+- Questions MUST be appropriate for ${studentYear} students
+- Difficulty level MUST be ${diffLevel}: ${diffDesc}
+- Wrong options should be plausible but clearly incorrect for students at this level
 - Each question is worth 10 points
 
 Return ONLY a valid JSON array, no markdown, no explanation. Format:

@@ -128,7 +128,7 @@
     },
 
     // ─── AI QUIZ GENERATION ───
-    generateQuiz: async function (topic, numberOfQuestions, language) {
+    generateQuiz: async function (topic, numberOfQuestions, language, year, level) {
       var user = firebase.auth().currentUser;
       if (!user) throw new Error("Not authenticated");
       var token = await user.getIdToken();
@@ -139,7 +139,7 @@
           "Content-Type": "application/json",
           "Authorization": "Bearer " + token,
         },
-        body: JSON.stringify({ topic: topic, numberOfQuestions: numberOfQuestions, language: language }),
+        body: JSON.stringify({ topic: topic, numberOfQuestions: numberOfQuestions, language: language, year: year || "", level: level || "Sederhana" }),
       });
       if (!resp.ok) {
         var err = await resp.json().catch(function () { return {}; });

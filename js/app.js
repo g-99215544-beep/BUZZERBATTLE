@@ -164,6 +164,7 @@
     });
   }
   function cleanupRoom() {
+    try { clearGameTimer(); } catch(e) {}
     if (roomListenerCode) { BB.fire.stopListenRoom(roomListenerCode); roomListenerCode = null; }
     S.roomData = null; S.roomCode = null;
   }
@@ -211,20 +212,31 @@
     showModal(BB.ui.aiModal());
   };
   BB.app.generateAI = async function () {
+    var subjectEl = document.getElementById("aiSubject");
+    var yearEl = document.getElementById("aiYear");
+    var levelEl = document.getElementById("aiLevel");
     var topicEl = document.getElementById("aiTopic");
     var numEl = document.getElementById("aiNum");
     var langEl = document.getElementById("aiLang");
     var btn = document.getElementById("aiGenBtn");
+    var subject = subjectEl ? subjectEl.value : "";
+    var year = yearEl ? yearEl.value : "Tahun 4";
+    var level = levelEl ? levelEl.value : "Sederhana";
     var topic = topicEl ? topicEl.value.trim() : "";
     var num = numEl ? parseInt(numEl.value) || 5 : 5;
     var lang = langEl ? langEl.value : "Malay";
-    if (!topic) { showToast("Sila masukkan topik.", "error"); return; }
+
+    if (!subject && !topic) { showToast("Sila pilih subjek atau masukkan topik.", "error"); return; }
+
+    // Build combined topic string
+    var fullTopic = subject || "";
+    if (topic) fullTopic += (fullTopic ? " - " : "") + topic;
 
     btn.disabled = true;
     btn.innerHTML = '<span class="loading-spinner"></span> Menjana soalan...';
     try {
-      var questions = await BB.fire.generateQuiz(topic, num, lang);
-      S.editorTitle = S.editorTitle || topic;
+      var questions = await BB.fire.generateQuiz(fullTopic, num, lang, year, level);
+      S.editorTitle = S.editorTitle || fullTopic;
       S.editorQuestions = S.editorQuestions.concat(questions);
       BB.app.closeModal();
       render();
@@ -303,6 +315,7 @@
         currentQuestionIndex: 0,
         buzzedBy: null,
         maxPlayers: 3,
+        timerSeconds: 30,
         questions: qs.questions.map(function (q) {
           return { question: q.question, options: q.options, correctIndex: q.correctIndex, points: q.points || 10 };
         }),
@@ -315,15 +328,106 @@
   };
 
   BB.app.cancelRoom = async function () {
+    clearGameTimer();
     if (S.roomCode) try { await BB.fire.deleteRoom(S.roomCode); } catch (e) {}
     cleanupRoom(); S.screen = "dashboard"; render();
     showToast("Room dibatalkan.", "info");
   };
 
+  // Timer interval reference
+  var timerInterval = null;
+
+  function clearGameTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function startGameTimer() {
+    clearGameTimer();
+    var timerSec = S.roomData && S.roomData.timerSeconds ? S.roomData.timerSeconds : 0;
+    if (!timerSec || timerSec <= 0) return;
+    BB.fire.setRoomField(S.roomCode, "timerRemaining", timerSec);
+    timerInterval = setInterval(async function () {
+      if (!S.roomData) { clearGameTimer(); return; }
+      var remaining = S.roomData.timerRemaining != null ? S.roomData.timerRemaining : timerSec;
+      remaining--;
+      if (remaining <= 0) {
+        clearGameTimer();
+        // Time's up! Handle timeout
+        await handleTimeout();
+      } else {
+        BB.fire.setRoomField(S.roomCode, "timerRemaining", remaining);
+      }
+    }, 1000);
+  }
+
+  async function handleTimeout() {
+    if (!S.roomCode || !S.roomData) return;
+    var isSingle = (!S.roomData.players || Object.keys(S.roomData.players).length === 0) || S.roomData.singlePlayer;
+    var qi = S.roomData.currentQuestionIndex || 0;
+    var q = (S.roomData.questions || [])[qi];
+    if (!q) return;
+
+    BB.playWrongBuzzer();
+
+    if (isSingle) {
+      // Single player timeout - lose a life
+      var hostLives = S.roomData.hostLives != null ? S.roomData.hostLives : 3;
+      hostLives = Math.max(0, hostLives - 1);
+      await BB.fire.updateRoom(S.roomCode, {
+        status: "answered",
+        hostLives: hostLives,
+        timerRemaining: 0,
+        lastAnswer: { playerId: "host", playerName: S.roomData.hostName || "Host", selectedIndex: -1, correct: false, points: q.points || 10, timeout: true },
+      });
+    } else {
+      // Multiplayer timeout - all alive players lose a life
+      var players = S.roomData.players || {};
+      var updates = {};
+      Object.keys(players).forEach(function (pid) {
+        var lives = players[pid].lives != null ? players[pid].lives : 3;
+        if (lives > 0) {
+          updates["players/" + pid + "/lives"] = lives - 1;
+        }
+      });
+      updates.status = "answered";
+      updates.timerRemaining = 0;
+      updates.lastAnswer = { playerId: "timeout", playerName: "Tiada siapa", selectedIndex: -1, correct: false, points: q.points || 10, timeout: true };
+      await BB.fire.updateRoom(S.roomCode, updates);
+    }
+  }
+
+  BB.app.setTimer = function (val) {
+    if (!S.roomCode) return;
+    BB.fire.setRoomField(S.roomCode, "timerSeconds", parseInt(val) || 0);
+  };
+
   BB.app.startGame = async function () {
     if (!S.roomCode) return;
     try {
-      await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", currentQuestionIndex: 0, buzzedBy: null, lastAnswer: null });
+      var players = S.roomData && S.roomData.players ? S.roomData.players : {};
+      var playerCount = Object.keys(players).length;
+      var isSingle = playerCount === 0;
+
+      // Initialize lives for all players
+      var updates = {
+        status: "buzzer_open",
+        currentQuestionIndex: 0,
+        buzzedBy: null,
+        lastAnswer: null,
+        singlePlayer: isSingle,
+      };
+
+      if (isSingle) {
+        updates.hostLives = 3;
+        updates.hostScore = 0;
+      } else {
+        Object.keys(players).forEach(function (pid) {
+          updates["players/" + pid + "/lives"] = 3;
+        });
+      }
+
+      await BB.fire.updateRoom(S.roomCode, updates);
+      startGameTimer();
     } catch (e) { showToast("Gagal mulakan.", "error"); }
   };
 
@@ -415,13 +519,58 @@
 
   BB.app.buzz = async function () {
     if (!S.roomCode || !S.playerId) return;
+    // Check if player is eliminated
+    if (S.roomData && S.roomData.players && S.roomData.players[S.playerId]) {
+      var myLives = S.roomData.players[S.playerId].lives;
+      if (myLives != null && myLives <= 0) {
+        showToast("Anda sudah tersingkir!", "error");
+        return;
+      }
+    }
     var won = await BB.fire.tryBuzz(S.roomCode, S.playerId);
     if (won) await BB.fire.setRoomField(S.roomCode, "status", "buzzed");
+  };
+
+  // Single player answer (host answers directly)
+  BB.app.singleAnswer = async function (selectedIndex) {
+    if (!S.roomCode || !S.roomData) return;
+    clearGameTimer();
+    var questions = S.roomData.questions || [];
+    var qi = S.roomData.currentQuestionIndex || 0;
+    var q = questions[qi];
+    if (!q) return;
+    var correct = selectedIndex === q.correctIndex;
+    var pts = q.points || 10;
+    var hostScore = S.roomData.hostScore || 0;
+    var hostLives = S.roomData.hostLives != null ? S.roomData.hostLives : 3;
+
+    if (correct) {
+      BB.playCorrectSound();
+      hostScore += pts;
+    } else {
+      BB.playWrongBuzzer();
+      hostLives = Math.max(0, hostLives - 1);
+    }
+
+    await BB.fire.updateRoom(S.roomCode, {
+      status: "answered",
+      hostScore: hostScore,
+      hostLives: hostLives,
+      timerRemaining: 0,
+      lastAnswer: {
+        playerId: "host",
+        playerName: S.roomData.hostName || "Host",
+        selectedIndex: selectedIndex,
+        correct: correct,
+        points: pts,
+      },
+    });
   };
 
   // Host answers on behalf of the buzzed player
   BB.app.hostAnswer = async function (selectedIndex) {
     if (!S.roomCode || !S.roomData) return;
+    clearGameTimer();
     var buzzedBy = S.roomData.buzzedBy;
     if (!buzzedBy) return;
     var questions = S.roomData.questions || [];
@@ -430,7 +579,7 @@
     if (!q) return;
     var correct = selectedIndex === q.correctIndex;
     var pts = q.points || 10;
-    var delta = correct ? pts : -Math.floor(pts / 2);
+    var delta = correct ? pts : 0;
 
     // Play sound effect
     if (!correct) {
@@ -439,18 +588,26 @@
       BB.playCorrectSound();
     }
 
-    await BB.fire.updateScore(S.roomCode, buzzedBy, delta);
-    var players = S.roomData.players || {};
-    await BB.fire.updateRoom(S.roomCode, {
+    // Update score (only add for correct, no negative)
+    if (delta > 0) await BB.fire.updateScore(S.roomCode, buzzedBy, delta);
+
+    // Update lives if wrong
+    var updates = {
       status: "answered",
+      timerRemaining: 0,
       lastAnswer: {
         playerId: buzzedBy,
-        playerName: players[buzzedBy] ? players[buzzedBy].name : "Pemain",
+        playerName: (S.roomData.players && S.roomData.players[buzzedBy]) ? S.roomData.players[buzzedBy].name : "Pemain",
         selectedIndex: selectedIndex,
         correct: correct,
         points: pts,
       },
-    });
+    };
+    if (!correct) {
+      var currentLives = (S.roomData.players && S.roomData.players[buzzedBy] && S.roomData.players[buzzedBy].lives != null) ? S.roomData.players[buzzedBy].lives : 3;
+      updates["players/" + buzzedBy + "/lives"] = Math.max(0, currentLives - 1);
+    }
+    await BB.fire.updateRoom(S.roomCode, updates);
   };
 
   // Legacy: player answer (disabled - host answers for them now)
@@ -461,16 +618,39 @@
 
   BB.app.nextQuestion = async function () {
     if (!S.roomCode) return;
+    clearGameTimer();
+
+    // Check if single player host has 0 lives
+    if (S.roomData && S.roomData.singlePlayer && S.roomData.hostLives != null && S.roomData.hostLives <= 0) {
+      await BB.fire.setRoomField(S.roomCode, "status", "ended");
+      return;
+    }
+
+    // Check if all multiplayer players eliminated
+    if (S.roomData && !S.roomData.singlePlayer && S.roomData.players) {
+      var anyAlive = false;
+      Object.values(S.roomData.players).forEach(function (p) {
+        if ((p.lives != null ? p.lives : 3) > 0) anyAlive = true;
+      });
+      if (!anyAlive) {
+        await BB.fire.setRoomField(S.roomCode, "status", "ended");
+        return;
+      }
+    }
+
     var qi = (S.roomData.currentQuestionIndex || 0) + 1;
-    await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", currentQuestionIndex: qi, buzzedBy: null, lastAnswer: null });
+    await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", currentQuestionIndex: qi, buzzedBy: null, lastAnswer: null, timerRemaining: S.roomData.timerSeconds || 0 });
+    startGameTimer();
   };
 
   BB.app.endGame = async function () {
     if (!S.roomCode) return;
+    clearGameTimer();
     await BB.fire.setRoomField(S.roomCode, "status", "ended");
   };
 
   BB.app.backToDashboard = function () {
+    clearGameTimer();
     cleanupRoom(); S.screen = "dashboard"; render();
   };
 

@@ -134,7 +134,8 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
   var players = roomData && roomData.players ? Object.entries(roomData.players).map(function (e) { return { id: e[0], name: e[1].name, score: e[1].score }; }) : [];
   var slots = '';
   for (var i = 0; i < 3; i++) slots += BB.ui.playerSlot(players[i], i);
-  var canStart = players.length >= 1;
+  var isSingle = players.length === 0;
+  var timerVal = (roomData && roomData.timerSeconds) || 30;
 
   return '<div class="screen-waiting">' + BB.ui.fsBtn() +
     '<h2 class="font-bungee" style="font-size:clamp(18px,4vw,24px);color:var(--accent3);margin-bottom:4px">⚡ WAITING ROOM</h2>' +
@@ -142,14 +143,26 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
     '<div class="room-code-box"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:600">Kod Room</p>' +
       '<div class="room-code-display">' + roomCode + '</div>' +
       '<button class="bb-btn" onclick="BB.app.copyCode()" id="copyBtn" style="margin-top:14px;background:transparent;color:var(--accent2);border:1px solid var(--accent2);padding:6px 18px;font-size:12px">' + BB.SVG.copy + ' Salin</button></div>' +
+    // Timer setting
+    '<div style="width:100%;max-width:500px;margin-bottom:24px;background:#ffffff;border-radius:16px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">⏱️</span><span style="font-weight:700;font-size:16px">Masa Setiap Soalan</span></div>' +
+        '<select class="bb-input" id="timerSelect" onchange="BB.app.setTimer(this.value)" style="width:auto;padding:8px 14px;font-size:15px;font-weight:700">' +
+          '<option value="15"' + (timerVal === 15 ? ' selected' : '') + '>15 saat</option>' +
+          '<option value="30"' + (timerVal === 30 ? ' selected' : '') + '>30 saat</option>' +
+          '<option value="45"' + (timerVal === 45 ? ' selected' : '') + '>45 saat</option>' +
+          '<option value="60"' + (timerVal === 60 ? ' selected' : '') + '>60 saat</option>' +
+          '<option value="90"' + (timerVal === 90 ? ' selected' : '') + '>90 saat</option>' +
+          '<option value="0"' + (timerVal === 0 ? ' selected' : '') + '>Tiada had masa</option>' +
+        '</select>' +
+      '</div></div>' +
     '<div style="width:100%;max-width:500px;margin-bottom:32px">' +
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' + BB.SVG.users + '<span style="font-weight:700;font-size:16px">Pemain (' + players.length + '/3)</span></div>' +
       '<div class="flex flex-col gap-12">' + slots + '</div></div>' +
     '<div style="display:flex;gap:14px;width:100%;max-width:500px">' +
       '<button class="bb-btn" onclick="BB.app.cancelRoom()" style="flex:1;background:#f0f2f5;color:var(--text-dim);border:1px solid var(--border);padding:16px 0;font-size:15px">✕ Batal</button>' +
-      '<button class="bb-btn" onclick="BB.app.startGame()" ' + (canStart ? '' : 'disabled') + ' style="flex:2;padding:16px 0;font-size:18px;letter-spacing:2px;' +
-        (canStart ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:0 4px 16px rgba(255,62,108,0.25)' : 'background:#e0e4ea;color:var(--text-dim)') + '">🚀 START</button></div>' +
-    (canStart ? '' : '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px"><span class="waiting-dot"></span><span class="waiting-dot"></span><span class="waiting-dot"></span><span style="color:var(--text-dim);font-size:13px;margin-left:4px">Menunggu pemain...</span></div>') +
+      '<button class="bb-btn" onclick="BB.app.startGame()" style="flex:2;padding:16px 0;font-size:18px;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:0 4px 16px rgba(255,62,108,0.25)">' + (isSingle ? '🎮 SINGLE PLAYER' : '🚀 START') + '</button></div>' +
+    (isSingle ? '<p style="color:var(--accent2);font-size:13px;margin-top:16px;font-weight:600">Tiada pemain? Tekan untuk bermain solo!</p>' : '') +
   '</div>';
 };
 
@@ -203,22 +216,45 @@ BB.ui.hostLive = function (roomData) {
   var status = roomData.status || "buzzer_locked";
   var buzzedBy = roomData.buzzedBy || null;
   var lastAnswer = roomData.lastAnswer || null;
-  var players = roomData.players ? Object.entries(roomData.players).map(function (e) { return { id: e[0], name: e[1].name, score: e[1].score || 0 }; }) : [];
+  var players = roomData.players ? Object.entries(roomData.players).map(function (e) { return { id: e[0], name: e[1].name, score: e[1].score || 0, lives: e[1].lives != null ? e[1].lives : 3 }; }) : [];
   var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
   var buzzerName = buzzedBy ? (players.find(function (p) { return p.id === buzzedBy; }) || {}).name || "" : "";
   var isLast = qi >= questions.length - 1;
+  var isSingle = !players.length || roomData.singlePlayer;
+  var timerSeconds = roomData.timerSeconds || 0;
+  var timerRemaining = roomData.timerRemaining != null ? roomData.timerRemaining : -1;
 
   if (!q) return '<div class="screen-live-host">Tiada soalan.</div>';
 
+  // Lives display helper
+  function livesHtml(lives) {
+    var h = '';
+    for (var i = 0; i < 3; i++) h += '<span style="font-size:14px">' + (i < lives ? '❤️' : '🖤') + '</span>';
+    return h;
+  }
+
   // Scoreboard - prominent centered
   var sb = '';
-  sorted.forEach(function (p, i) {
-    var chipColor = BB.SLOT_COLORS[i] || 'var(--border)';
-    sb += '<div class="scoreboard-chip-big" style="border:2px solid ' + chipColor + ';box-shadow:0 0 15px ' + chipColor + '33">' +
-      '<span style="font-size:20px">' + BB.PLAYER_EMOJIS[i] + '</span>' +
-      '<div style="text-align:center"><span style="font-weight:700;font-size:15px;display:block">' + BB.esc(p.name) + '</span>' +
-      '<span class="font-bungee" style="font-size:28px;color:var(--accent3)">' + p.score + '</span></div></div>';
-  });
+  if (!isSingle) {
+    sorted.forEach(function (p, i) {
+      var chipColor = BB.SLOT_COLORS[i] || 'var(--border)';
+      var eliminated = p.lives <= 0;
+      sb += '<div class="scoreboard-chip-big" style="border:2px solid ' + chipColor + ';box-shadow:0 0 15px ' + chipColor + '33;' + (eliminated ? 'opacity:0.4;' : '') + '">' +
+        '<span style="font-size:20px">' + BB.PLAYER_EMOJIS[i] + '</span>' +
+        '<div style="text-align:center"><span style="font-weight:700;font-size:15px;display:block">' + BB.esc(p.name) + (eliminated ? ' 💀' : '') + '</span>' +
+        '<div style="margin:2px 0">' + livesHtml(p.lives) + '</div>' +
+        '<span class="font-bungee" style="font-size:28px;color:var(--accent3)">' + p.score + '</span></div></div>';
+    });
+  }
+
+  // Timer bar
+  var timerBar = '';
+  if (timerSeconds > 0 && timerRemaining >= 0 && !lastAnswer) {
+    var pct = Math.round((timerRemaining / timerSeconds) * 100);
+    var timerColor = pct > 50 ? 'var(--success)' : pct > 20 ? 'var(--accent3)' : 'var(--danger)';
+    timerBar = '<div class="timer-bar-wrap" style="width:100%;max-width:900px;margin:0 auto 16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;color:' + timerColor + ';font-size:18px">⏱️ ' + timerRemaining + 's</span></div>' +
+      '<div style="background:#e0e4ea;border-radius:8px;height:10px;overflow:hidden"><div style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
+  }
 
   // Options - uniform color, highlight correct/wrong after answer
   var opts = '';
@@ -238,7 +274,19 @@ BB.ui.hostLive = function (roomData) {
 
   // Center action
   var action = '';
-  if ((status === "buzzer_locked" || status === "buzzer_open") && !buzzedBy && !lastAnswer) {
+
+  // SINGLE PLAYER MODE: host answers directly
+  if (isSingle && (status === "buzzer_open" || status === "buzzer_locked") && !lastAnswer) {
+    var spBtns = '';
+    q.options.forEach(function (opt, oi) {
+      var optColor = BB.OPT_COLORS[oi];
+      spBtns += '<button class="answer-option-btn" onclick="BB.app.singleAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
+        '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
+    });
+    action = '<div style="text-align:center;margin-bottom:8px"><span class="font-bungee" style="font-size:20px;color:var(--accent2)">🎮 PILIH JAWAPAN ANDA</span></div>' +
+      '<div class="flex flex-col gap-12" style="width:100%;max-width:500px">' + spBtns + '</div>';
+  } else if ((status === "buzzer_locked" || status === "buzzer_open") && !buzzedBy && !lastAnswer) {
     action = '<div style="text-align:center;animation:pulse 1s infinite"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">' + BB.SVG.unlock + '<span class="font-bungee" style="font-size:22px;color:var(--accent2)">BUZZER TERBUKA!</span></div><p style="color:var(--text-dim);font-size:16px">Menunggu pemain tekan buzzer...</p></div>';
   } else if (buzzedBy && status === "buzzed") {
     // Host picks answer on behalf of buzzed player
@@ -253,18 +301,34 @@ BB.ui.hostLive = function (roomData) {
       '<div class="flex flex-col gap-12" style="width:100%;max-width:500px;margin-top:16px">' + answerBtns + '</div>';
   } else if (lastAnswer) {
     var emoji = lastAnswer.correct ? "🎉" : "❌";
-    var resultText = BB.esc(lastAnswer.playerName) + ': ' + (lastAnswer.correct ? 'BETUL! +' + lastAnswer.points : 'SALAH! −' + Math.floor(lastAnswer.points / 2));
+    var resultLabel = lastAnswer.timeout ? '⏰ MASA TAMAT!' : (lastAnswer.correct ? 'BETUL! +' + lastAnswer.points : 'SALAH! −1 ❤️');
+    var resultColor = lastAnswer.correct ? 'var(--success)' : 'var(--danger)';
+    var resultText = isSingle ? resultLabel : (BB.esc(lastAnswer.playerName) + ': ' + resultLabel);
+    if (lastAnswer.timeout) emoji = "⏰";
     action = '<div style="text-align:center;animation:popIn 0.4s ease"><div style="font-size:48px;margin-bottom:8px">' + emoji + '</div>' +
-      '<p style="font-size:22px;font-weight:800;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + resultText + '</p>' +
+      '<p style="font-size:22px;font-weight:800;color:' + resultColor + '">' + resultText + '</p>' +
       '<div style="display:flex;gap:12px;margin-top:20px;justify-content:center">' +
         (!isLast ? '<button class="bb-btn" onclick="BB.app.nextQuestion()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#fff;font-size:16px;padding:14px 32px;box-shadow:0 4px 12px rgba(0,153,221,0.2)">Soalan Seterusnya →</button>' : '') +
         '<button class="bb-btn" onclick="BB.app.endGame()" style="' + (isLast ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:0 4px 12px rgba(255,62,108,0.2)' : 'background:#f0f2f5;color:var(--text-dim);border:1px solid var(--border)') + ';font-size:16px;padding:14px 32px">' + (isLast ? '🏆 LIHAT KEPUTUSAN' : '⏹ TAMAT AWAL') + '</button>' +
       '</div></div>';
   }
 
+  // Single player score display
+  var spScore = '';
+  if (isSingle) {
+    var hostLives = roomData.hostLives != null ? roomData.hostLives : 3;
+    var hostScore = roomData.hostScore || 0;
+    spScore = '<div class="scoreboard-center"><div class="scoreboard-chip-big" style="border:2px solid var(--accent);box-shadow:0 0 15px rgba(255,62,108,0.2)">' +
+      '<span style="font-size:20px">🎮</span>' +
+      '<div style="text-align:center"><span style="font-weight:700;font-size:15px;display:block">' + BB.esc(roomData.hostName || 'Host') + (hostLives <= 0 ? ' 💀' : '') + '</span>' +
+      '<div style="margin:2px 0">' + (function(){ var h=''; for(var i=0;i<3;i++) h+='<span style="font-size:14px">'+(i<hostLives?'❤️':'🖤')+'</span>'; return h; })() + '</div>' +
+      '<span class="font-bungee" style="font-size:28px;color:var(--accent3)">' + hostScore + '</span></div></div></div>';
+  }
+
   return '<div class="screen-live-host">' + BB.ui.fsBtn() +
-    '<div style="text-align:center;margin-bottom:8px"><span class="live-tag">⚡ LIVE</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
-    '<div class="scoreboard-center">' + sb + '</div>' +
+    '<div style="text-align:center;margin-bottom:8px"><span class="live-tag">⚡ ' + (isSingle ? 'SOLO' : 'LIVE') + '</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
+    (isSingle ? spScore : '<div class="scoreboard-center">' + sb + '</div>') +
+    timerBar +
     '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
       '<div class="question-display"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '</p>' +
         '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
@@ -284,18 +348,41 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
   var questions = roomData.questions || [];
   var q = questions[qi];
   var players = roomData.players || {};
-  var myScore = players[playerId] ? (players[playerId].score || 0) : 0;
+  var myData = players[playerId] || {};
+  var myScore = myData.score || 0;
+  var myLives = myData.lives != null ? myData.lives : 3;
   var iWon = buzzedBy === playerId;
+  var amEliminated = myLives <= 0;
+  var timerSeconds = roomData.timerSeconds || 0;
+  var timerRemaining = roomData.timerRemaining != null ? roomData.timerRemaining : -1;
 
   if (!q) return '<div class="screen-live-player"><p style="font-size:24px;font-weight:700">Menunggu...</p></div>';
+
+  // Lives display
+  function livesHtml(lives) {
+    var h = '';
+    for (var i = 0; i < 3; i++) h += '<span style="font-size:18px">' + (i < lives ? '❤️' : '🖤') + '</span>';
+    return h;
+  }
+  var livesBar = '<div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:12px">' + livesHtml(myLives) + (amEliminated ? '<span style="font-weight:700;color:var(--danger);font-size:14px;margin-left:8px">TERSINGKIR!</span>' : '') + '</div>';
+
+  // Timer bar for player
+  var timerBar = '';
+  if (timerSeconds > 0 && timerRemaining >= 0 && !lastAnswer) {
+    var pct = Math.round((timerRemaining / timerSeconds) * 100);
+    var timerColor = pct > 50 ? 'var(--success)' : pct > 20 ? 'var(--accent3)' : 'var(--danger)';
+    timerBar = '<div style="width:100%;margin-bottom:16px"><div style="display:flex;align-items:center;justify-content:center;margin-bottom:6px"><span style="font-weight:700;color:' + timerColor + ';font-size:20px;font-family:Bungee,cursive">⏱️ ' + timerRemaining + 's</span></div>' +
+      '<div style="background:#e0e4ea;border-radius:8px;height:10px;overflow:hidden"><div style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
+  }
 
   // Answer revealed
   if (lastAnswer) {
     var myAnswer = lastAnswer.playerId === playerId;
+    var isTimeout = lastAnswer.timeout;
     var revealOpts = '';
     q.options.forEach(function (opt, oi) {
       var isCorrectOpt = oi === q.correctIndex;
-      var isSelectedWrong = lastAnswer.selectedIndex === oi && !lastAnswer.correct;
+      var isSelectedWrong = lastAnswer.selectedIndex === oi && !lastAnswer.correct && !isTimeout;
       var optStyle = '';
       var optIcon = '';
       if (isCorrectOpt) {
@@ -311,14 +398,18 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
         '<span class="font-bungee" style="font-size:22px;width:40px;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
         '<span style="font-weight:700;font-size:clamp(18px,3vw,24px)">' + BB.esc(opt) + '</span>' + optIcon + '</div>';
     });
-    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:600px">' +
-      '<div style="font-size:64px;margin-bottom:16px">' + (myAnswer ? (lastAnswer.correct ? '🎉' : '😢') : '📊') + '</div>' +
+    var topEmoji = isTimeout ? '⏰' : (myAnswer ? (lastAnswer.correct ? '🎉' : '😢') : '📊');
+    var topText = isTimeout ? '<p class="font-bungee" style="font-size:28px;color:var(--danger)">MASA TAMAT!</p><p style="font-size:18px;color:var(--danger);margin-top:4px">Semua pemain −1 ❤️</p>' :
       (myAnswer ?
         '<p class="font-bungee" style="font-size:32px;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + (lastAnswer.correct ? 'BETUL!' : 'SALAH!') + '</p>' +
-        '<p style="font-size:24px;font-weight:700;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + ';margin-top:8px">' + (lastAnswer.correct ? '+' + lastAnswer.points : '−' + Math.floor(lastAnswer.points / 2)) + '</p>'
+        '<p style="font-size:24px;font-weight:700;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + ';margin-top:8px">' + (lastAnswer.correct ? '+' + lastAnswer.points : '−1 ❤️') + '</p>'
         :
         '<p style="font-size:22px;font-weight:700">' + BB.esc(lastAnswer.playerName) + ' ' + (lastAnswer.correct ? 'menjawab betul!' : 'menjawab salah!') + '</p>'
-      ) +
+      );
+    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:600px">' +
+      livesBar +
+      '<div style="font-size:64px;margin-bottom:16px">' + topEmoji + '</div>' +
+      topText +
       '<div class="flex flex-col gap-10" style="margin-top:20px;text-align:left">' + revealOpts + '</div>' +
       '<div style="margin-top:24px;background:#ffffff;border-radius:14px;padding:12px 24px;border:1px solid var(--border);display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><span style="color:var(--text-dim);font-size:15px">Markah: </span><span class="font-bungee" style="font-size:26px;color:var(--accent3)">' + myScore + '</span></div>' +
       '<p style="color:var(--text-dim);font-size:15px;margin-top:16px">Menunggu soalan seterusnya...</p></div></div>';
@@ -338,6 +429,7 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
     var buzzerPlayerName = "";
     Object.entries(players).forEach(function (e) { if (e[0] === buzzedBy) buzzerPlayerName = e[1].name; });
     return '<div class="screen-live-player"><div style="animation:slideUp 0.4s ease;width:100%;max-width:600px">' +
+      livesBar + timerBar +
       '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
       '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
       '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
@@ -351,14 +443,16 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
       '</div></div></div>';
   }
 
-  // Default: Show question + buzzer + answer choices (player can buzz anytime, can't click answers)
-  var canBuzz = (status === "buzzer_open" || status === "buzzer_locked") && !buzzedBy;
+  // Default: Show question + buzzer + answer choices
+  var canBuzz = (status === "buzzer_open" || status === "buzzer_locked") && !buzzedBy && !amEliminated;
   return '<div class="screen-live-player"><div style="animation:slideUp 0.4s ease;width:100%;max-width:600px">' +
+    livesBar + timerBar +
     '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
     '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
     '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
     '<div style="display:flex;flex-direction:column;align-items:center;gap:16px">' +
-      (canBuzz ? '<p style="color:var(--accent);font-family:Bungee,cursive;font-size:20px;animation:pulse 0.8s infinite">TEKAN BUZZER!</p><button class="buzzer-button" onclick="BB.app.buzz()">BUZZ!</button>' : '<p style="color:var(--text-dim);font-size:16px">Menunggu...</p>') +
+      (amEliminated ? '<div style="font-size:48px;margin-bottom:4px">💀</div><p class="font-bungee" style="font-size:22px;color:var(--danger)">ANDA TERSINGKIR!</p><p style="color:var(--text-dim);font-size:14px">Nyawa habis. Anda hanya boleh menonton.</p>' :
+        (canBuzz ? '<p style="color:var(--accent);font-family:Bungee,cursive;font-size:20px;animation:pulse 0.8s infinite">TEKAN BUZZER!</p><button class="buzzer-button" onclick="BB.app.buzz()">BUZZ!</button>' : '<p style="color:var(--text-dim);font-size:16px">Menunggu...</p>')) +
       '<div style="margin-top:12px;background:#ffffff;border-radius:14px;padding:12px 24px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.06)"><span style="color:var(--text-dim);font-size:15px">Markah: </span><span class="font-bungee" style="font-size:26px;color:var(--accent3)">' + myScore + '</span></div>' +
     '</div></div></div>';
 };
@@ -367,7 +461,11 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
 //  RESULTS SCREEN
 // ═══════════════════════════════════════
 BB.ui.results = function (roomData, isHost) {
-  var players = roomData && roomData.players ? Object.entries(roomData.players).map(function (e) { return { id: e[0], name: e[1].name, score: e[1].score || 0 }; }) : [];
+  var isSingle = roomData && roomData.singlePlayer;
+  var players = roomData && roomData.players ? Object.entries(roomData.players).map(function (e) { return { id: e[0], name: e[1].name, score: e[1].score || 0, lives: e[1].lives != null ? e[1].lives : 0 }; }) : [];
+  if (isSingle) {
+    players = [{ id: "host", name: roomData.hostName || "Host", score: roomData.hostScore || 0, lives: roomData.hostLives != null ? roomData.hostLives : 0 }];
+  }
   var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
 
   // Confetti
@@ -383,10 +481,13 @@ BB.ui.results = function (roomData, isHost) {
 
   var ranks = '';
   sorted.forEach(function (p, i) {
+    var livesDisp = '';
+    for (var li = 0; li < 3; li++) livesDisp += '<span style="font-size:12px">' + (li < (p.lives || 0) ? '❤️' : '🖤') + '</span>';
     ranks += '<div class="rank-card" style="background:' + (i === 0 ? 'linear-gradient(135deg,rgba(255,152,0,0.08),rgba(255,152,0,0.02))' : '#ffffff') + ';border:2px solid ' + (i < 3 ? BB.PODIUM_COLORS[i] : 'var(--border)') + ';animation-delay:' + (i * 0.15) + 's;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
       '<span class="rank-medal" style="font-size:' + (i < 3 ? '40px' : '24px') + '">' + (i < 3 ? BB.MEDALS[i] : '#' + (i + 1)) + '</span>' +
       '<div style="flex:1;text-align:left"><p style="font-weight:800;font-size:' + (i === 0 ? 22 : 18) + 'px;color:' + (i === 0 ? 'var(--accent3)' : 'var(--text)') + '">' + BB.esc(p.name) + '</p>' +
-        (i === 0 ? '<p style="font-size:12px;color:var(--accent3);font-weight:600">PEMENANG!</p>' : '') + '</div>' +
+        (i === 0 && !isSingle ? '<p style="font-size:12px;color:var(--accent3);font-weight:600">PEMENANG!</p>' : '') +
+        '<div style="margin-top:2px">' + livesDisp + '</div></div>' +
       '<div style="text-align:right"><p class="rank-score" style="font-size:' + (i === 0 ? 28 : 22) + 'px;color:' + (i === 0 ? 'var(--accent3)' : 'var(--accent2)') + '">' + p.score + '</p><p style="font-size:11px;color:var(--text-dim)">markah</p></div></div>';
   });
 
@@ -403,19 +504,62 @@ BB.ui.results = function (roomData, isHost) {
 
 // ─── AI Generate Modal ───
 BB.ui.aiModal = function () {
+  var labelStyle = 'color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px';
+  var selectStyle = 'font-size:15px;padding:10px 14px';
   return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
-    '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">' +
+    '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px">' +
       '<div style="font-size:48px;margin-bottom:12px">🤖</div>' +
       '<h3 style="font-size:20px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#9c27b0,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Jana Soalan AI</h3>' +
       '<p style="color:var(--text-dim);font-size:13px;margin-bottom:24px">Powered by Gemini</p>' +
       '<div style="text-align:left;width:100%">' +
-        '<label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Topik / Prompt</label>' +
-        '<input class="bb-input" id="aiTopic" placeholder="cth: Matematik Tambah Tahun 2" style="margin-bottom:16px;font-size:15px">' +
+        // Subject dropdown
+        '<div style="margin-bottom:16px"><label style="' + labelStyle + '">Subjek</label>' +
+          '<select class="bb-input" id="aiSubject" style="' + selectStyle + '">' +
+            '<option value="">-- Pilih Subjek --</option>' +
+            '<option value="Matematik">Matematik</option>' +
+            '<option value="Sains">Sains</option>' +
+            '<option value="Bahasa Melayu">Bahasa Melayu</option>' +
+            '<option value="Bahasa Inggeris">Bahasa Inggeris</option>' +
+            '<option value="Sejarah">Sejarah</option>' +
+            '<option value="Pendidikan Islam">Pendidikan Islam</option>' +
+            '<option value="Pendidikan Moral">Pendidikan Moral</option>' +
+            '<option value="Geografi">Geografi</option>' +
+            '<option value="Reka Bentuk & Teknologi">Reka Bentuk & Teknologi</option>' +
+            '<option value="Pendidikan Kesihatan">Pendidikan Kesihatan</option>' +
+            '<option value="Lain-lain">Lain-lain (tulis di bawah)</option>' +
+          '</select></div>' +
+        // Year & Level row
+        '<div style="display:flex;gap:12px;margin-bottom:16px">' +
+          '<div style="flex:1"><label style="' + labelStyle + '">Tahun / Tingkatan</label>' +
+            '<select class="bb-input" id="aiYear" style="' + selectStyle + '">' +
+              '<option value="Tahun 1">Tahun 1</option>' +
+              '<option value="Tahun 2">Tahun 2</option>' +
+              '<option value="Tahun 3">Tahun 3</option>' +
+              '<option value="Tahun 4" selected>Tahun 4</option>' +
+              '<option value="Tahun 5">Tahun 5</option>' +
+              '<option value="Tahun 6">Tahun 6</option>' +
+              '<option value="Tingkatan 1">Tingkatan 1</option>' +
+              '<option value="Tingkatan 2">Tingkatan 2</option>' +
+              '<option value="Tingkatan 3">Tingkatan 3</option>' +
+              '<option value="Tingkatan 4">Tingkatan 4</option>' +
+              '<option value="Tingkatan 5">Tingkatan 5</option>' +
+            '</select></div>' +
+          '<div style="flex:1"><label style="' + labelStyle + '">Tahap Kesukaran</label>' +
+            '<select class="bb-input" id="aiLevel" style="' + selectStyle + '">' +
+              '<option value="Mudah">Mudah</option>' +
+              '<option value="Sederhana" selected>Sederhana</option>' +
+              '<option value="Susah">Susah</option>' +
+            '</select></div>' +
+        '</div>' +
+        // Topic / additional prompt
+        '<label style="' + labelStyle + '">Topik Tambahan / Prompt (pilihan)</label>' +
+        '<input class="bb-input" id="aiTopic" placeholder="cth: Pecahan, Tambah & Tolak" style="margin-bottom:16px;font-size:15px">' +
+        // Number & Language row
         '<div style="display:flex;gap:12px;margin-bottom:20px">' +
-          '<div style="flex:1"><label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Bilangan Soalan</label>' +
-            '<select class="bb-input" id="aiNum" style="font-size:15px;padding:10px 14px"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>' +
-          '<div style="flex:1"><label style="color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Bahasa</label>' +
-            '<select class="bb-input" id="aiLang" style="font-size:15px;padding:10px 14px"><option value="Malay" selected>Bahasa Melayu</option><option value="English">English</option></select></div>' +
+          '<div style="flex:1"><label style="' + labelStyle + '">Bilangan Soalan</label>' +
+            '<select class="bb-input" id="aiNum" style="' + selectStyle + '"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>' +
+          '<div style="flex:1"><label style="' + labelStyle + '">Bahasa</label>' +
+            '<select class="bb-input" id="aiLang" style="' + selectStyle + '"><option value="Malay" selected>Bahasa Melayu</option><option value="English">English</option></select></div>' +
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:12px;width:100%">' +
