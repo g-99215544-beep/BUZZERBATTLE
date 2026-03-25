@@ -1,43 +1,51 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const admin = require("firebase-admin");
 
-// This reads the secret you stored with:
-// firebase functions:secrets:set GEMINI_API_KEY
+admin.initializeApp();
+
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-exports.generateQuiz = onCall(
+exports.generateQuiz = onRequest(
   {
-    // Grant this function access to the secret
     secrets: [geminiApiKey],
-    // Allow calls from your GitHub Pages domain
-    cors: true,
-    // Limit execution time and memory
     timeoutSeconds: 60,
     memory: "256MiB",
-    // Rate limiting: max 10 calls per minute per user
-    enforceAppCheck: false,
+    cors: true,
   },
-  async (request) => {
-    // Only authenticated users (hosts) can generate quizzes
-    if (!request.auth) {
-      throw new HttpsError(
-        "unauthenticated",
-        "Anda perlu login untuk guna AI."
-      );
+  async (req, res) => {
+    // Only allow POST
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
+      return;
     }
 
-    const { topic, numberOfQuestions, language } = request.data;
+    // Verify Firebase Auth token
+    const authHeader = req.headers.authorization || "";
+    const match = authHeader.match(/^Bearer (.+)$/);
+    if (!match) {
+      res.status(401).json({ error: "Anda perlu login untuk guna AI." });
+      return;
+    }
 
-    // Validate input
+    try {
+      await admin.auth().verifyIdToken(match[1]);
+    } catch (e) {
+      res.status(401).json({ error: "Token tidak sah." });
+      return;
+    }
+
+    const { topic, numberOfQuestions, language } = req.body;
+
     if (!topic || typeof topic !== "string" || topic.trim().length < 2) {
-      throw new HttpsError("invalid-argument", "Sila masukkan topik yang sah.");
+      res.status(400).json({ error: "Sila masukkan topik yang sah." });
+      return;
     }
 
     const numQ = Math.min(Math.max(parseInt(numberOfQuestions) || 5, 1), 20);
     const lang = language || "Malay";
 
-    // Build prompt
     const prompt = `Generate a quiz about "${topic.trim()}" with exactly ${numQ} multiple choice questions.
 
 Rules:
@@ -60,14 +68,12 @@ Return ONLY a valid JSON array, no markdown, no explanation. Format:
 correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
 
     try {
-      // Initialize Gemini with the secret API key
       const genAI = new GoogleGenerativeAI(geminiApiKey.value());
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
 
-      // Extract JSON from response (handle markdown code blocks)
       let jsonStr = text;
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
@@ -76,12 +82,10 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
 
       const questions = JSON.parse(jsonStr);
 
-      // Validate structure
       if (!Array.isArray(questions) || questions.length === 0) {
         throw new Error("Invalid response format");
       }
 
-      // Sanitize each question
       const sanitized = questions.map(function (q) {
         return {
           question: String(q.question || ""),
@@ -93,13 +97,10 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
         };
       });
 
-      return { questions: sanitized };
+      res.status(200).json({ questions: sanitized });
     } catch (error) {
       console.error("Gemini API error:", error);
-      throw new HttpsError(
-        "internal",
-        "Gagal menjana soalan. Cuba lagi."
-      );
+      res.status(500).json({ error: "Gagal menjana soalan. Cuba lagi." });
     }
   }
 );

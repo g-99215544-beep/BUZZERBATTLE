@@ -128,10 +128,25 @@
     },
 
     // ─── AI QUIZ GENERATION ───
-    generateQuiz: function (topic, numberOfQuestions, language) {
-      var fn = firebase.app().functions("us-central1").httpsCallable("generateQuiz");
-      return fn({ topic: topic, numberOfQuestions: numberOfQuestions, language: language })
-        .then(function (result) { return result.data.questions; });
+    generateQuiz: async function (topic, numberOfQuestions, language) {
+      var user = firebase.auth().currentUser;
+      if (!user) throw new Error("Not authenticated");
+      var token = await user.getIdToken();
+      var url = "https://us-central1-livequiz-953f6.cloudfunctions.net/generateQuiz";
+      var resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify({ topic: topic, numberOfQuestions: numberOfQuestions, language: language }),
+      });
+      if (!resp.ok) {
+        var err = await resp.json().catch(function () { return {}; });
+        throw new Error(err.error || "Gagal menjana soalan");
+      }
+      var data = await resp.json();
+      return data.questions;
     },
   };
 })();
