@@ -77,8 +77,8 @@
     var ok = S.editorTitle.trim() && S.editorQuestions.length > 0 &&
       S.editorQuestions.every(function (q) { return q.question.trim() && q.options.every(function (o) { return o.trim(); }); });
     btn.disabled = !ok;
-    btn.style.background = ok ? "linear-gradient(135deg,var(--success),#00c853)" : "var(--card)";
-    btn.style.color = ok ? "#000" : "var(--text-dim)";
+    btn.style.background = ok ? "linear-gradient(135deg,var(--success),#00c853)" : "#e0e4ea";
+    btn.style.color = ok ? "#fff" : "var(--text-dim)";
     btn.style.boxShadow = ok ? "0 0 20px rgba(0,230,118,0.3)" : "none";
   }
 
@@ -107,10 +107,27 @@
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen();
       try { await screen.orientation.lock("landscape"); } catch (e) {}
+      // If host, broadcast fullscreen to all players
+      if (S.roomCode && S.user) {
+        BB.fire.setRoomField(S.roomCode, "forceFullscreen", true);
+      }
     } else {
       document.exitFullscreen();
       try { screen.orientation.unlock(); } catch (e) {}
+      if (S.roomCode && S.user) {
+        BB.fire.setRoomField(S.roomCode, "forceFullscreen", false);
+      }
     }
+  };
+
+  // Player: auto-enter fullscreen when host triggers it
+  BB.checkForceFullscreen = async function (roomData) {
+    if (!roomData || !roomData.forceFullscreen) return;
+    if (document.fullscreenElement) return;
+    try {
+      await document.documentElement.requestFullscreen();
+      try { await screen.orientation.lock("landscape"); } catch (e) {}
+    } catch (e) {}
   };
 
   // ─── NAV ───
@@ -128,6 +145,11 @@
     BB.fire.listenRoom(code, function (data) {
       if (!data) { S.roomData = null; return; }
       S.roomData = data;
+
+      // Force fullscreen for players when host triggers it
+      if (S.playerId && !S.user) {
+        BB.checkForceFullscreen(data);
+      }
 
       // Auto transition
       if (data.status === "ended") {
@@ -301,7 +323,7 @@
   BB.app.startGame = async function () {
     if (!S.roomCode) return;
     try {
-      await BB.fire.updateRoom(S.roomCode, { status: "buzzer_locked", currentQuestionIndex: 0, buzzedBy: null, lastAnswer: null });
+      await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", currentQuestionIndex: 0, buzzedBy: null, lastAnswer: null });
     } catch (e) { showToast("Gagal mulakan.", "error"); }
   };
 
@@ -323,9 +345,9 @@
     if (btn) {
       var ok = el.value.length === 6;
       btn.disabled = !ok;
-      btn.style.background = ok ? "linear-gradient(135deg,var(--accent2),#00b0ff)" : "var(--card)";
-      btn.style.color = ok ? "#000" : "var(--text-dim)";
-      btn.style.boxShadow = ok ? "var(--glow-cyan)" : "none";
+      btn.style.background = ok ? "linear-gradient(135deg,var(--accent2),#00b0ff)" : "#e0e4ea";
+      btn.style.color = ok ? "#fff" : "var(--text-dim)";
+      btn.style.boxShadow = ok ? "0 4px 16px rgba(0,153,221,0.25)" : "none";
     }
   };
 
@@ -349,9 +371,9 @@
     var ok = el.value.trim().length >= 2;
     if (btn) {
       btn.disabled = !ok;
-      btn.style.background = ok ? "linear-gradient(135deg,var(--accent2),#00b0ff)" : "var(--card)";
-      btn.style.color = ok ? "#000" : "var(--text-dim)";
-      btn.style.boxShadow = ok ? "var(--glow-cyan)" : "none";
+      btn.style.background = ok ? "linear-gradient(135deg,var(--accent2),#00b0ff)" : "#e0e4ea";
+      btn.style.color = ok ? "#fff" : "var(--text-dim)";
+      btn.style.boxShadow = ok ? "0 4px 16px rgba(0,153,221,0.25)" : "none";
     }
   };
 
@@ -385,6 +407,7 @@
   // ═══════════════════════════════════════
   //  GAME: LIVE QUIZ ACTIONS
   // ═══════════════════════════════════════
+  // Buzzer is always open now - this is kept for compatibility
   BB.app.unlockBuzzer = async function () {
     if (!S.roomCode) return;
     await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", buzzedBy: null, lastAnswer: null });
@@ -396,8 +419,11 @@
     if (won) await BB.fire.setRoomField(S.roomCode, "status", "buzzed");
   };
 
-  BB.app.answer = async function (selectedIndex) {
-    if (!S.roomCode || !S.playerId || !S.roomData) return;
+  // Host answers on behalf of the buzzed player
+  BB.app.hostAnswer = async function (selectedIndex) {
+    if (!S.roomCode || !S.roomData) return;
+    var buzzedBy = S.roomData.buzzedBy;
+    if (!buzzedBy) return;
     var questions = S.roomData.questions || [];
     var qi = S.roomData.currentQuestionIndex || 0;
     var q = questions[qi];
@@ -413,13 +439,13 @@
       BB.playCorrectSound();
     }
 
-    await BB.fire.updateScore(S.roomCode, S.playerId, delta);
+    await BB.fire.updateScore(S.roomCode, buzzedBy, delta);
     var players = S.roomData.players || {};
     await BB.fire.updateRoom(S.roomCode, {
       status: "answered",
       lastAnswer: {
-        playerId: S.playerId,
-        playerName: players[S.playerId] ? players[S.playerId].name : S.playerName,
+        playerId: buzzedBy,
+        playerName: players[buzzedBy] ? players[buzzedBy].name : "Pemain",
         selectedIndex: selectedIndex,
         correct: correct,
         points: pts,
@@ -427,10 +453,16 @@
     });
   };
 
+  // Legacy: player answer (disabled - host answers for them now)
+  BB.app.answer = async function (selectedIndex) {
+    // Players no longer answer directly - host does it for them
+    return;
+  };
+
   BB.app.nextQuestion = async function () {
     if (!S.roomCode) return;
     var qi = (S.roomData.currentQuestionIndex || 0) + 1;
-    await BB.fire.updateRoom(S.roomCode, { status: "buzzer_locked", currentQuestionIndex: qi, buzzedBy: null, lastAnswer: null });
+    await BB.fire.updateRoom(S.roomCode, { status: "buzzer_open", currentQuestionIndex: qi, buzzedBy: null, lastAnswer: null });
   };
 
   BB.app.endGame = async function () {

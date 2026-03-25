@@ -16,7 +16,7 @@ BB.ui.playerSlot = function (player, index) {
   var color = BB.SLOT_COLORS[index % 3];
   if (!player) {
     return '<div class="player-slot empty">' +
-      '<div class="avatar" style="background:var(--bg);border:1px solid var(--border)">?</div>' +
+      '<div class="avatar" style="background:#f0f2f5;border:1px solid var(--border)">?</div>' +
       '<div><p style="font-weight:700;font-size:18px;color:var(--text-dim)">Slot ' + (index + 1) + ' — Menunggu...</p></div></div>';
   }
   return '<div class="player-slot filled" style="border-color:' + color + ';box-shadow:0 0 20px ' + color + '33">' +
@@ -39,11 +39,11 @@ BB.ui.landing = function () {
     '<div class="landing-logo">' + BB.SVG.zap + '</div>' +
     '<h1 class="landing-title">BUZZER<br>BATTLE</h1>' +
     '<p class="landing-sub">Siapa Paling Laju?</p>' +
-    '<button class="bb-btn" onclick="BB.app.login()" style="background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;font-size:17px;padding:16px 48px;margin-bottom:20px;width:100%;max-width:340px;box-shadow:var(--glow-pink)">🎤  HOST (Login Google)</button>' +
+    '<button class="bb-btn" onclick="BB.app.login()" style="background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;font-size:18px;padding:18px 48px;margin-bottom:20px;width:100%;max-width:340px;box-shadow:0 4px 16px rgba(255,62,108,0.25)">🎤  HOST (Login Google)</button>' +
     '<div class="landing-divider"><span>ATAU</span></div>' +
     '<div style="width:100%;max-width:340px;margin-top:12px">' +
       '<input class="bb-input code-input" id="joinCode" placeholder="Masukkan Kod Room" maxlength="6" oninput="BB.app.formatCode(this)">' +
-      '<button class="bb-btn" id="joinBtn" onclick="BB.app.joinRoom()" disabled style="background:var(--card);color:var(--text-dim);font-size:16px;padding:14px 0;width:100%">🎮  JOIN GAME</button>' +
+      '<button class="bb-btn" id="joinBtn" onclick="BB.app.joinRoom()" disabled style="background:#e0e4ea;color:var(--text-dim);font-size:18px;padding:16px 0;width:100%">🎮  JOIN GAME</button>' +
     '</div>' +
     '<p style="color:var(--text-dim);font-size:12px;margin-top:48px;opacity:0.5">BuzzerBattle © 2026</p></div>';
 };
@@ -63,9 +63,9 @@ BB.ui.dashboard = function (user, quizSets) {
         '<div style="flex:1;min-width:180px"><h3 style="font-size:18px;font-weight:700;margin-bottom:4px">' + BB.esc(qs.title) + '</h3>' +
         '<p style="color:var(--text-dim);font-size:13px">' + qs.questionCount + ' soalan</p></div>' +
         '<div class="quiz-card-actions">' +
-          '<button class="bb-btn" onclick="BB.app.editQuiz(\'' + qs.id + '\')" style="background:var(--bg);color:var(--accent2);border:1px solid var(--accent2);padding:8px 14px;font-size:13px">' + BB.SVG.edit + ' Edit</button>' +
-          '<button class="bb-btn" onclick="BB.app.confirmDeleteQuiz(\'' + qs.id + '\')" style="background:var(--bg);color:var(--danger);border:1px solid var(--danger);padding:8px 14px;font-size:13px">' + BB.SVG.trash + ' Padam</button>' +
-          '<button class="bb-btn" onclick="BB.app.startBattle(\'' + qs.id + '\')" style="background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;padding:8px 18px;font-size:13px;box-shadow:var(--glow-pink)">' + BB.SVG.play + ' Mula</button>' +
+          '<button class="bb-btn" onclick="BB.app.editQuiz(\'' + qs.id + '\')" style="background:#f0f7ff;color:var(--accent2);border:1px solid var(--accent2);padding:8px 14px;font-size:13px">' + BB.SVG.edit + ' Edit</button>' +
+          '<button class="bb-btn" onclick="BB.app.confirmDeleteQuiz(\'' + qs.id + '\')" style="background:#fff5f5;color:var(--danger);border:1px solid var(--danger);padding:8px 14px;font-size:13px">' + BB.SVG.trash + ' Padam</button>' +
+          '<button class="bb-btn" onclick="BB.app.startBattle(\'' + qs.id + '\')" style="background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;padding:8px 18px;font-size:13px;box-shadow:0 4px 12px rgba(255,62,108,0.2)">' + BB.SVG.play + ' Mula</button>' +
         '</div></div>';
     });
     cards += '</div>';
@@ -78,7 +78,7 @@ BB.ui.dashboard = function (user, quizSets) {
         '<p style="color:var(--text-dim);font-size:14px;margin-top:4px">Selamat datang, <span style="color:var(--accent2);font-weight:600">' + name + '</span></p>' +
       '</div>' +
       '<button class="bb-btn" onclick="BB.app.logout()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);padding:8px 16px;font-size:13px">' + BB.SVG.logout + ' Log Keluar</button></div>' +
-      '<button class="bb-btn" onclick="BB.app.newQuiz()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#000;font-size:16px;padding:16px 32px;margin-bottom:32px;box-shadow:var(--glow-cyan)">' + BB.SVG.plus + ' Buat Quiz Baru</button>' +
+      '<button class="bb-btn" onclick="BB.app.newQuiz()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#fff;font-size:16px;padding:16px 32px;margin-bottom:32px;box-shadow:0 4px 16px rgba(0,153,221,0.25)">' + BB.SVG.plus + ' Buat Quiz Baru</button>' +
       cards +
     '</div></div>';
 };
@@ -114,7 +114,7 @@ BB.ui.editor = function (title, questions, isEdit) {
   return '<div class="screen-editor">' + BB.ui.fsBtn() +
     '<div class="editor-inner">' +
       '<div style="display:flex;align-items:center;gap:16px;margin-bottom:28px">' +
-        '<button class="bb-btn" onclick="BB.app.go(\'dashboard\')" style="background:var(--card);color:var(--text);border:1px solid var(--border);width:44px;height:44px;padding:0;border-radius:12px">' + BB.SVG.back + '</button>' +
+        '<button class="bb-btn" onclick="BB.app.go(\'dashboard\')" style="background:#ffffff;color:var(--text);border:1px solid var(--border);width:44px;height:44px;padding:0;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.06)">' + BB.SVG.back + '</button>' +
         '<h2 class="font-bungee" style="font-size:22px;background:linear-gradient(135deg,var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent">' + (isEdit ? 'Edit Quiz' : 'Quiz Baru') + '</h2></div>' +
       '<div style="margin-bottom:28px"><label style="color:var(--text-dim);font-size:13px;font-weight:600;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Tajuk Quiz</label>' +
         '<input class="bb-input" id="quizTitle" placeholder="cth: Matematik Tahun 4" value="' + BB.esc(title) + '" oninput="BB.app.state.editorTitle=this.value" style="font-size:18px;font-weight:600"></div>' +
@@ -146,9 +146,9 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' + BB.SVG.users + '<span style="font-weight:700;font-size:16px">Pemain (' + players.length + '/3)</span></div>' +
       '<div class="flex flex-col gap-12">' + slots + '</div></div>' +
     '<div style="display:flex;gap:14px;width:100%;max-width:500px">' +
-      '<button class="bb-btn" onclick="BB.app.cancelRoom()" style="flex:1;background:var(--bg2);color:var(--text-dim);border:1px solid var(--border);padding:16px 0;font-size:15px">✕ Batal</button>' +
+      '<button class="bb-btn" onclick="BB.app.cancelRoom()" style="flex:1;background:#f0f2f5;color:var(--text-dim);border:1px solid var(--border);padding:16px 0;font-size:15px">✕ Batal</button>' +
       '<button class="bb-btn" onclick="BB.app.startGame()" ' + (canStart ? '' : 'disabled') + ' style="flex:2;padding:16px 0;font-size:18px;letter-spacing:2px;' +
-        (canStart ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:var(--glow-pink);animation:glow 2s ease-in-out infinite' : 'background:var(--card);color:var(--text-dim)') + '">🚀 START</button></div>' +
+        (canStart ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:0 4px 16px rgba(255,62,108,0.25)' : 'background:#e0e4ea;color:var(--text-dim)') + '">🚀 START</button></div>' +
     (canStart ? '' : '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:20px"><span class="waiting-dot"></span><span class="waiting-dot"></span><span class="waiting-dot"></span><span style="color:var(--text-dim);font-size:13px;margin-left:4px">Menunggu pemain...</span></div>') +
   '</div>';
 };
@@ -164,7 +164,7 @@ BB.ui.playerJoinName = function (roomCode) {
       '<div class="font-bungee" style="font-size:36px;color:var(--accent2);letter-spacing:0.15em;margin-bottom:32px">' + roomCode + '</div>' +
       '<input class="bb-input" id="playerNameInput" placeholder="Nama Anda / Kumpulan" maxlength="20" oninput="BB.app.checkName(this)" style="text-align:center;font-size:20px;font-weight:700;margin-bottom:6px">' +
       '<p id="nameCount" style="color:var(--text-dim);font-size:11px;margin-bottom:24px">0/20</p>' +
-      '<button class="bb-btn" id="joinNameBtn" onclick="BB.app.submitName()" disabled style="font-size:17px;padding:16px 0;width:100%;margin-bottom:14px;background:var(--card);color:var(--text-dim)">⚡ MASUK ROOM</button>' +
+      '<button class="bb-btn" id="joinNameBtn" onclick="BB.app.submitName()" disabled style="font-size:18px;padding:18px 0;width:100%;margin-bottom:14px;background:#e0e4ea;color:var(--text-dim)">⚡ MASUK ROOM</button>' +
       '<button class="bb-btn" onclick="BB.app.go(\'landing\')" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);padding:10px 0;width:100%;font-size:14px">← Kembali</button>' +
     '</div></div>';
 };
@@ -177,7 +177,7 @@ BB.ui.playerWaiting = function (roomCode, playerName, roomData) {
   var list = '';
   players.forEach(function (p, i) {
     var isMe = p.name === playerName;
-    list += '<div style="background:' + (isMe ? 'rgba(0,229,255,0.07)' : 'var(--card)') + ';border:1px solid ' + (isMe ? 'var(--accent2)' : 'var(--border)') + ';border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;animation:popIn 0.4s ease">' +
+    list += '<div style="background:' + (isMe ? 'rgba(0,153,221,0.06)' : '#ffffff') + ';border:1px solid ' + (isMe ? 'var(--accent2)' : 'var(--border)') + ';border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:12px;animation:popIn 0.4s ease;box-shadow:0 2px 6px rgba(0,0,0,0.04)">' +
       '<span style="font-size:20px">' + BB.PLAYER_EMOJIS[i] + '</span><span style="font-weight:700;font-size:16px">' + BB.esc(p.name) + '</span>' +
       (isMe ? '<span style="margin-left:auto;font-size:11px;color:var(--accent2);font-weight:600">ANDA</span>' : '') + '</div>';
   });
@@ -225,7 +225,7 @@ BB.ui.hostLive = function (roomData) {
   q.options.forEach(function (opt, oi) {
     var isCorrect = lastAnswer && oi === q.correctIndex;
     var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
-    var bgColor = isCorrect ? 'rgba(0,230,118,0.15)' : isWrong ? 'rgba(255,62,108,0.15)' : 'rgba(0,229,255,0.06)';
+    var bgColor = isCorrect ? 'rgba(0,200,83,0.1)' : isWrong ? 'rgba(255,62,108,0.08)' : '#f5f7fa';
     var borderColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
     var labelColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
     opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + bgColor + ';border-color:' + borderColor + '">' +
@@ -238,20 +238,27 @@ BB.ui.hostLive = function (roomData) {
 
   // Center action
   var action = '';
-  if (status === "buzzer_locked" && !lastAnswer) {
-    action = '<button class="bb-btn" onclick="BB.app.unlockBuzzer()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#000;font-size:18px;padding:18px 48px;box-shadow:var(--glow-cyan)">' + BB.SVG.unlock + ' BUKA BUZZER</button>';
-  } else if (status === "buzzer_open" && !buzzedBy) {
-    action = '<div style="text-align:center;animation:pulse 1s infinite"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">' + BB.SVG.unlock + '<span class="font-bungee" style="font-size:22px;color:var(--accent2)">BUZZER TERBUKA!</span></div><p style="color:var(--text-dim);font-size:14px">Menunggu pemain...</p></div>';
+  if ((status === "buzzer_locked" || status === "buzzer_open") && !buzzedBy && !lastAnswer) {
+    action = '<div style="text-align:center;animation:pulse 1s infinite"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">' + BB.SVG.unlock + '<span class="font-bungee" style="font-size:22px;color:var(--accent2)">BUZZER TERBUKA!</span></div><p style="color:var(--text-dim);font-size:16px">Menunggu pemain tekan buzzer...</p></div>';
   } else if (buzzedBy && status === "buzzed") {
-    action = '<div class="buzzed-card"><p class="buzzed-name">' + BB.esc(buzzerName) + '</p><p style="color:var(--text-dim);font-size:14px;margin-top:4px">sedang memilih jawapan...</p></div>';
+    // Host picks answer on behalf of buzzed player
+    var answerBtns = '';
+    q.options.forEach(function (opt, oi) {
+      var optColor = BB.OPT_COLORS[oi];
+      answerBtns += '<button class="answer-option-btn" onclick="BB.app.hostAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
+        '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
+    });
+    action = '<div class="buzzed-card"><p class="buzzed-name">' + BB.esc(buzzerName) + '</p><p style="color:var(--text-dim);font-size:14px;margin-top:4px">Pilih jawapan untuk pemain ini:</p></div>' +
+      '<div class="flex flex-col gap-12" style="width:100%;max-width:500px;margin-top:16px">' + answerBtns + '</div>';
   } else if (lastAnswer) {
     var emoji = lastAnswer.correct ? "🎉" : "❌";
     var resultText = BB.esc(lastAnswer.playerName) + ': ' + (lastAnswer.correct ? 'BETUL! +' + lastAnswer.points : 'SALAH! −' + Math.floor(lastAnswer.points / 2));
     action = '<div style="text-align:center;animation:popIn 0.4s ease"><div style="font-size:48px;margin-bottom:8px">' + emoji + '</div>' +
       '<p style="font-size:22px;font-weight:800;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + resultText + '</p>' +
       '<div style="display:flex;gap:12px;margin-top:20px;justify-content:center">' +
-        (!isLast ? '<button class="bb-btn" onclick="BB.app.nextQuestion()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#000;font-size:16px;padding:14px 32px">Soalan Seterusnya →</button>' : '') +
-        '<button class="bb-btn" onclick="BB.app.endGame()" style="' + (isLast ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:var(--glow-pink)' : 'background:var(--card);color:var(--text-dim);border:1px solid var(--border)') + ';font-size:16px;padding:14px 32px">' + (isLast ? '🏆 LIHAT KEPUTUSAN' : '⏹ TAMAT AWAL') + '</button>' +
+        (!isLast ? '<button class="bb-btn" onclick="BB.app.nextQuestion()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#fff;font-size:16px;padding:14px 32px;box-shadow:0 4px 12px rgba(0,153,221,0.2)">Soalan Seterusnya →</button>' : '') +
+        '<button class="bb-btn" onclick="BB.app.endGame()" style="' + (isLast ? 'background:linear-gradient(135deg,var(--accent),#ff6b6b);color:#fff;box-shadow:0 4px 12px rgba(255,62,108,0.2)' : 'background:#f0f2f5;color:var(--text-dim);border:1px solid var(--border)') + ';font-size:16px;padding:14px 32px">' + (isLast ? '🏆 LIHAT KEPUTUSAN' : '⏹ TAMAT AWAL') + '</button>' +
       '</div></div>';
   }
 
@@ -280,55 +287,11 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
   var myScore = players[playerId] ? (players[playerId].score || 0) : 0;
   var iWon = buzzedBy === playerId;
 
-  if (!q) return '<div class="screen-live-player">Menunggu...</div>';
-
-  // Buzzer locked
-  if (status === "buzzer_locked" && !lastAnswer) {
-    return '<div class="screen-live-player">' +
-      '<p style="color:var(--text-dim);font-size:14px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
-      '<div style="color:var(--text-dim);margin-bottom:24px">' + BB.SVG.lock + '</div>' +
-      '<p class="font-bungee" style="font-size:24px;color:var(--text-dim);margin-bottom:8px">BUZZER DIKUNCI</p>' +
-      '<p style="color:var(--text-dim);font-size:14px">Lihat soalan di paparan TV</p>' +
-      '<div style="margin-top:32px;background:var(--card);border-radius:14px;padding:12px 24px;border:1px solid var(--border)"><span style="color:var(--text-dim);font-size:13px">Markah: </span><span class="font-bungee" style="font-size:22px;color:var(--accent3)">' + myScore + '</span></div></div>';
-  }
-
-  // Buzzer open
-  if (status === "buzzer_open" && !buzzedBy) {
-    return '<div class="screen-live-player">' +
-      '<p style="color:var(--accent2);font-family:Bungee,cursive;font-size:18px;margin-bottom:32px;animation:pulse 0.8s infinite">TEKAN SEKARANG!</p>' +
-      '<button class="buzzer-button" onclick="BB.app.buzz()">BUZZ!</button>' +
-      '<p style="color:var(--text-dim);font-size:13px;margin-top:24px">' + BB.esc(playerName) + ' • Markah: ' + myScore + '</p></div>';
-  }
-
-  // Someone else buzzed
-  if (buzzedBy && !iWon && status === "buzzed") {
-    var winnerName = "";
-    Object.entries(players).forEach(function (e) { if (e[0] === buzzedBy) winnerName = e[1].name; });
-    return '<div class="screen-live-player">' +
-      '<div style="font-size:64px;margin-bottom:16px">😱</div>' +
-      '<p class="font-bungee" style="font-size:22px;color:var(--accent);margin-bottom:8px">TERLAMBAT!</p>' +
-      '<p style="color:var(--text-dim);font-size:16px"><span style="color:var(--accent2);font-weight:700">' + BB.esc(winnerName) + '</span> lebih laju!</p>' +
-      '<p style="color:var(--text-dim);font-size:13px;margin-top:24px">Menunggu jawapan...</p></div>';
-  }
-
-  // I won buzz — show options
-  if (iWon && status === "buzzed") {
-    var opts = '';
-    q.options.forEach(function (opt, oi) {
-      opts += '<button class="answer-option-btn" onclick="BB.app.answer(' + oi + ')" style="background:rgba(0,229,255,0.06);border-color:var(--accent2)">' +
-        '<span class="font-bungee" style="font-size:20px;color:var(--accent2);width:36px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' + BB.esc(opt) + '</button>';
-    });
-    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:500px">' +
-      '<div style="font-size:48px;margin-bottom:8px">🔥</div>' +
-      '<p class="font-bungee" style="font-size:22px;color:var(--success);margin-bottom:24px">ANDA MENANG BUZZ!</p>' +
-      '<p style="color:var(--text-dim);font-size:14px;margin-bottom:20px">Pilih jawapan anda:</p>' +
-      '<div class="flex flex-col gap-12">' + opts + '</div></div></div>';
-  }
+  if (!q) return '<div class="screen-live-player"><p style="font-size:24px;font-weight:700">Menunggu...</p></div>';
 
   // Answer revealed
   if (lastAnswer) {
     var myAnswer = lastAnswer.playerId === playerId;
-    // Show all options with correct/wrong highlighting
     var revealOpts = '';
     q.options.forEach(function (opt, oi) {
       var isCorrectOpt = oi === q.correctIndex;
@@ -336,32 +299,68 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
       var optStyle = '';
       var optIcon = '';
       if (isCorrectOpt) {
-        optStyle = 'background:rgba(0,230,118,0.15);border-color:var(--success);color:var(--success)';
-        optIcon = '<span style="margin-left:auto;font-size:20px;color:var(--success)">✓</span>';
+        optStyle = 'background:rgba(0,200,83,0.1);border-color:var(--success);color:var(--success)';
+        optIcon = '<span style="margin-left:auto;font-size:24px;color:var(--success)">✓</span>';
       } else if (isSelectedWrong) {
-        optStyle = 'background:rgba(255,62,108,0.15);border-color:var(--danger);color:var(--danger);animation:wrongShake 0.5s ease';
-        optIcon = '<span style="margin-left:auto;font-size:20px;color:var(--danger)">✗</span>';
+        optStyle = 'background:rgba(255,62,108,0.08);border-color:var(--danger);color:var(--danger);animation:wrongShake 0.5s ease';
+        optIcon = '<span style="margin-left:auto;font-size:24px;color:var(--danger)">✗</span>';
       } else {
-        optStyle = 'background:var(--card);border-color:var(--border);opacity:0.5';
+        optStyle = 'background:#f5f7fa;border-color:var(--border);opacity:0.5';
       }
-      revealOpts += '<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:14px;border:2px solid;' + optStyle + '">' +
-        '<span class="font-bungee" style="font-size:18px;width:36px;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
-        '<span style="font-weight:600;font-size:16px">' + BB.esc(opt) + '</span>' + optIcon + '</div>';
+      revealOpts += '<div style="display:flex;align-items:center;gap:14px;padding:16px 22px;border-radius:14px;border:2px solid;' + optStyle + '">' +
+        '<span class="font-bungee" style="font-size:22px;width:40px;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span style="font-weight:700;font-size:clamp(18px,3vw,24px)">' + BB.esc(opt) + '</span>' + optIcon + '</div>';
     });
-    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:500px">' +
+    return '<div class="screen-live-player"><div style="animation:popIn 0.4s ease;text-align:center;width:100%;max-width:600px">' +
       '<div style="font-size:64px;margin-bottom:16px">' + (myAnswer ? (lastAnswer.correct ? '🎉' : '😢') : '📊') + '</div>' +
       (myAnswer ?
-        '<p class="font-bungee" style="font-size:28px;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + (lastAnswer.correct ? 'BETUL!' : 'SALAH!') + '</p>' +
-        '<p style="font-size:20px;font-weight:700;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + ';margin-top:8px">' + (lastAnswer.correct ? '+' + lastAnswer.points : '−' + Math.floor(lastAnswer.points / 2)) + '</p>'
+        '<p class="font-bungee" style="font-size:32px;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + '">' + (lastAnswer.correct ? 'BETUL!' : 'SALAH!') + '</p>' +
+        '<p style="font-size:24px;font-weight:700;color:' + (lastAnswer.correct ? 'var(--success)' : 'var(--danger)') + ';margin-top:8px">' + (lastAnswer.correct ? '+' + lastAnswer.points : '−' + Math.floor(lastAnswer.points / 2)) + '</p>'
         :
-        '<p style="font-size:18px;font-weight:700">' + BB.esc(lastAnswer.playerName) + ' ' + (lastAnswer.correct ? 'menjawab betul!' : 'menjawab salah!') + '</p>'
+        '<p style="font-size:22px;font-weight:700">' + BB.esc(lastAnswer.playerName) + ' ' + (lastAnswer.correct ? 'menjawab betul!' : 'menjawab salah!') + '</p>'
       ) +
       '<div class="flex flex-col gap-10" style="margin-top:20px;text-align:left">' + revealOpts + '</div>' +
-      '<div style="margin-top:24px;background:var(--card);border-radius:14px;padding:12px 24px;border:1px solid var(--border);display:inline-block"><span style="color:var(--text-dim);font-size:13px">Markah: </span><span class="font-bungee" style="font-size:22px;color:var(--accent3)">' + myScore + '</span></div>' +
-      '<p style="color:var(--text-dim);font-size:13px;margin-top:16px">Menunggu soalan seterusnya...</p></div></div>';
+      '<div style="margin-top:24px;background:#ffffff;border-radius:14px;padding:12px 24px;border:1px solid var(--border);display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><span style="color:var(--text-dim);font-size:15px">Markah: </span><span class="font-bungee" style="font-size:26px;color:var(--accent3)">' + myScore + '</span></div>' +
+      '<p style="color:var(--text-dim);font-size:15px;margin-top:16px">Menunggu soalan seterusnya...</p></div></div>';
   }
 
-  return '<div class="screen-live-player">Memuatkan...</div>';
+  // Build question display + answer choices (always visible, never clickable by player)
+  var optsDisplay = '';
+  q.options.forEach(function (opt, oi) {
+    var optColor = BB.OPT_COLORS[oi];
+    optsDisplay += '<div class="answer-option-btn disabled" style="border-color:' + optColor + ';cursor:default">' +
+      '<span class="font-bungee" style="font-size:clamp(20px,3vw,26px);color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+      '<span style="font-size:clamp(18px,3vw,24px)">' + BB.esc(opt) + '</span></div>';
+  });
+
+  // Someone buzzed (me or other) - waiting for host to answer
+  if (buzzedBy && status === "buzzed") {
+    var buzzerPlayerName = "";
+    Object.entries(players).forEach(function (e) { if (e[0] === buzzedBy) buzzerPlayerName = e[1].name; });
+    return '<div class="screen-live-player"><div style="animation:slideUp 0.4s ease;width:100%;max-width:600px">' +
+      '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
+      '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
+      '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
+      '<div style="text-align:center">' +
+        (iWon ?
+          '<div style="font-size:48px;margin-bottom:8px">🔥</div><p class="font-bungee" style="font-size:26px;color:var(--success);margin-bottom:8px">ANDA MENANG BUZZ!</p><p style="color:var(--text-dim);font-size:18px">Sebut jawapan anda. Host akan tekan untuk anda.</p>'
+          :
+          '<div style="font-size:48px;margin-bottom:8px">😱</div><p class="font-bungee" style="font-size:22px;color:var(--accent);margin-bottom:8px">TERLAMBAT!</p><p style="color:var(--text-dim);font-size:16px"><span style="color:var(--accent2);font-weight:700">' + BB.esc(buzzerPlayerName) + '</span> lebih laju!</p>'
+        ) +
+        '<div style="margin-top:20px;background:#ffffff;border-radius:14px;padding:12px 24px;border:1px solid var(--border);display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.06)"><span style="color:var(--text-dim);font-size:15px">Markah: </span><span class="font-bungee" style="font-size:26px;color:var(--accent3)">' + myScore + '</span></div>' +
+      '</div></div></div>';
+  }
+
+  // Default: Show question + buzzer + answer choices (player can buzz anytime, can't click answers)
+  var canBuzz = (status === "buzzer_open" || status === "buzzer_locked") && !buzzedBy;
+  return '<div class="screen-live-player"><div style="animation:slideUp 0.4s ease;width:100%;max-width:600px">' +
+    '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
+    '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
+    '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
+    '<div style="display:flex;flex-direction:column;align-items:center;gap:16px">' +
+      (canBuzz ? '<p style="color:var(--accent);font-family:Bungee,cursive;font-size:20px;animation:pulse 0.8s infinite">TEKAN BUZZER!</p><button class="buzzer-button" onclick="BB.app.buzz()">BUZZ!</button>' : '<p style="color:var(--text-dim);font-size:16px">Menunggu...</p>') +
+      '<div style="margin-top:12px;background:#ffffff;border-radius:14px;padding:12px 24px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.06)"><span style="color:var(--text-dim);font-size:15px">Markah: </span><span class="font-bungee" style="font-size:26px;color:var(--accent3)">' + myScore + '</span></div>' +
+    '</div></div></div>';
 };
 
 // ═══════════════════════════════════════
@@ -384,7 +383,7 @@ BB.ui.results = function (roomData, isHost) {
 
   var ranks = '';
   sorted.forEach(function (p, i) {
-    ranks += '<div class="rank-card" style="background:' + (i === 0 ? 'linear-gradient(135deg,rgba(255,224,70,0.13),rgba(255,224,70,0.03))' : 'var(--card)') + ';border:2px solid ' + (i < 3 ? BB.PODIUM_COLORS[i] : 'var(--border)') + ';animation-delay:' + (i * 0.15) + 's;' + (i === 0 ? 'box-shadow:var(--glow-pink)' : '') + '">' +
+    ranks += '<div class="rank-card" style="background:' + (i === 0 ? 'linear-gradient(135deg,rgba(255,152,0,0.08),rgba(255,152,0,0.02))' : '#ffffff') + ';border:2px solid ' + (i < 3 ? BB.PODIUM_COLORS[i] : 'var(--border)') + ';animation-delay:' + (i * 0.15) + 's;box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
       '<span class="rank-medal" style="font-size:' + (i < 3 ? '40px' : '24px') + '">' + (i < 3 ? BB.MEDALS[i] : '#' + (i + 1)) + '</span>' +
       '<div style="flex:1;text-align:left"><p style="font-weight:800;font-size:' + (i === 0 ? 22 : 18) + 'px;color:' + (i === 0 ? 'var(--accent3)' : 'var(--text)') + '">' + BB.esc(p.name) + '</p>' +
         (i === 0 ? '<p style="font-size:12px;color:var(--accent3);font-weight:600">PEMENANG!</p>' : '') + '</div>' +
@@ -397,7 +396,7 @@ BB.ui.results = function (roomData, isHost) {
       '<h1 class="results-title">KEPUTUSAN</h1>' +
       '<div class="flex flex-col gap-16 mb-32" style="margin-bottom:40px">' + ranks + '</div>' +
       (isHost ?
-        '<button class="bb-btn" onclick="BB.app.backToDashboard()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#000;font-size:16px;padding:16px 40px;box-shadow:var(--glow-cyan)">🏠 Kembali ke Dashboard</button>' :
+        '<button class="bb-btn" onclick="BB.app.backToDashboard()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#fff;font-size:16px;padding:16px 40px;box-shadow:0 4px 16px rgba(0,153,221,0.25)">🏠 Kembali ke Dashboard</button>' :
         '<p style="color:var(--text-dim);font-size:15px;font-weight:600">🎮 Terima kasih bermain!</p>') +
     '</div></div>';
 };
@@ -420,7 +419,7 @@ BB.ui.aiModal = function () {
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:12px;width:100%">' +
-        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:14px 0;font-size:15px">Batal</button>' +
+        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:#f0f2f5;color:var(--text);border:1px solid var(--border);padding:14px 0;font-size:15px">Batal</button>' +
         '<button class="bb-btn" id="aiGenBtn" onclick="BB.app.generateAI()" style="flex:1;background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;padding:14px 0;font-size:15px">🤖 Jana Soalan</button>' +
       '</div></div></div>';
 };
@@ -433,7 +432,7 @@ BB.ui.deleteModal = function (title) {
       '<h3 style="font-size:20px;font-weight:700;margin-bottom:8px">Padam Quiz?</h3>' +
       '<p style="color:var(--text-dim);font-size:14px;margin-bottom:28px">"' + BB.esc(title) + '" akan dipadam.</p>' +
       '<div style="display:flex;gap:12px">' +
-        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:12px 0;font-size:15px">Batal</button>' +
+        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:#f0f2f5;color:var(--text);border:1px solid var(--border);padding:12px 0;font-size:15px">Batal</button>' +
         '<button class="bb-btn" onclick="BB.app.doDelete()" style="flex:1;background:var(--danger);color:#fff;padding:12px 0;font-size:15px">Ya, Padam</button>' +
       '</div></div></div>';
 };
