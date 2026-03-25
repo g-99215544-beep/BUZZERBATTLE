@@ -129,7 +129,7 @@
 
     // ─── AI QUIZ GENERATION ───
     generateQuiz: function (topic, numberOfQuestions, language) {
-      var fn = firebase.functions().httpsCallable("generateQuiz");
+      var fn = firebase.app().functions("us-central1").httpsCallable("generateQuiz");
       return fn({ topic: topic, numberOfQuestions: numberOfQuestions, language: language })
         .then(function (result) { return result.data.questions; });
     },

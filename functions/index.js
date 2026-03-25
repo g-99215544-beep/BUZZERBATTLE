@@ -11,11 +11,7 @@ exports.generateQuiz = onCall(
     // Grant this function access to the secret
     secrets: [geminiApiKey],
     // Allow calls from your GitHub Pages domain
-    cors: [
-      "https://g-99215544-beep.github.io",
-      "http://localhost:5000",
-      "http://127.0.0.1:5000",
-    ],
+    cors: true,
     // Limit execution time and memory
     timeoutSeconds: 60,
     memory: "256MiB",
