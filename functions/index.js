@@ -69,7 +69,7 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
 
     try {
       const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
