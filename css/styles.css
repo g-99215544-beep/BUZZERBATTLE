@@ -485,3 +485,45 @@ textarea.bb-input { resize: vertical; }
 .justify-between { justify-content: space-between; }
 .flex-1 { flex: 1; }
 .font-bungee { font-family: 'Bungee', cursive; }
+
+/* ─── Premium Badge ─── */
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #ff9800, #ff5722);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  vertical-align: middle;
+  margin-left: 6px;
+  box-shadow: 0 2px 8px rgba(255,152,0,0.3);
+  animation: glow 3s ease infinite;
+}
+.upgrade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  color: var(--accent3);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1.5px solid var(--accent3);
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  margin-left: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
+}
+.upgrade-badge:hover {
+  background: linear-gradient(135deg, #ff9800, #ff5722);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(255,152,0,0.3);
+}

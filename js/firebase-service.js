@@ -127,12 +127,45 @@
       return ref.transaction(function (current) { return (current || 0) + delta; });
     },
 
+    // ─── PREMIUM STATUS ───
+    listenPremium: function (uid, cb) {
+      var ref = db.ref("buzzerBattle/users/" + uid + "/premium");
+      ref.on("value", function (snap) { cb(snap.val() === true); });
+      return ref;
+    },
+    listenAiUsage: function (uid, cb) {
+      var ref = db.ref("buzzerBattle/users/" + uid + "/aiUsage");
+      ref.on("value", function (snap) { cb(snap.val() || {}); });
+      return ref;
+    },
+
+    // ─── PAYMENT ───
+    createBill: async function () {
+      var user = firebase.auth().currentUser;
+      if (!user) throw new Error("Not authenticated");
+      var token = await user.getIdToken();
+      var url = BB.CLOUD_FUNCTIONS_URL + "/createBill";
+      var resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify({}),
+      });
+      if (!resp.ok) {
+        var err = await resp.json().catch(function () { return {}; });
+        throw new Error(err.error || "Gagal mencipta bil pembayaran");
+      }
+      return await resp.json();
+    },
+
     // ─── AI QUIZ GENERATION ───
     generateQuiz: async function (topic, numberOfQuestions, language, year, level) {
       var user = firebase.auth().currentUser;
       if (!user) throw new Error("Not authenticated");
       var token = await user.getIdToken();
-      var url = "https://us-central1-livequiz-953f6.cloudfunctions.net/generateQuiz";
+      var url = BB.CLOUD_FUNCTIONS_URL + "/generateQuiz";
       var resp = await fetch(url, {
         method: "POST",
         headers: {

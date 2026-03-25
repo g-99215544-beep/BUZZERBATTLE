@@ -25,6 +25,9 @@
       // Delete
       deleteId: null,
       deleteTitle: "",
+      // Premium
+      isPremium: false,
+      aiUsage: {},
     },
   };
 
@@ -209,8 +212,28 @@
 
   // AI Quiz Generation
   BB.app.showAiModal = function () {
-    showModal(BB.ui.aiModal());
+    if (!S.isPremium) {
+      showModal(BB.ui.upgradeModal());
+      return;
+    }
+    showModal(BB.ui.aiModal(S.aiUsage));
   };
+  // Premium Upgrade via ToyyibPay
+  BB.app.upgradePremium = async function () {
+    var btn = document.getElementById("upgradeBtn");
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Menyediakan pembayaran...'; }
+    try {
+      var data = await BB.fire.createBill();
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      }
+    } catch (e) {
+      console.error("Upgrade error:", e);
+      showToast("Gagal: " + (e.message || "Cuba lagi."), "error");
+      if (btn) { btn.disabled = false; btn.innerHTML = '👑 Bayar ' + BB.PREMIUM_PRICE; }
+    }
+  };
+
   BB.app.generateAI = async function () {
     var subjectEl = document.getElementById("aiSubject");
     var yearEl = document.getElementById("aiYear");
@@ -675,8 +698,25 @@
           S.quizSets = sets;
           if (S.screen === "dashboard") render();
         });
+        // Listen for premium status
+        BB.fire.listenPremium(user.uid, function (isPremium) {
+          S.isPremium = isPremium;
+          if (S.screen === "dashboard") render();
+        });
+        // Listen for AI usage
+        BB.fire.listenAiUsage(user.uid, function (usage) {
+          S.aiUsage = usage;
+        });
+        // Check if returning from payment
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("payment") === "success") {
+          window.history.replaceState({}, "", window.location.pathname);
+          showToast("Pembayaran sedang diproses. Premium akan aktif sebentar lagi!", "info");
+        }
       } else {
         S.screen = "landing";
+        S.isPremium = false;
+        S.aiUsage = {};
       }
       render();
     });

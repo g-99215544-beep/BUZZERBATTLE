@@ -53,6 +53,10 @@ BB.ui.landing = function () {
 // ═══════════════════════════════════════
 BB.ui.dashboard = function (user, quizSets) {
   var name = BB.esc(user.displayName || user.email);
+  var isPremium = BB.app.state.isPremium;
+  var premiumBadge = isPremium
+    ? '<span class="premium-badge">👑 PREMIUM</span>'
+    : '<button class="upgrade-badge" onclick="BB.app.showAiModal()">⚡ Upgrade Premium</button>';
   var cards = '';
   if (quizSets.length === 0) {
     cards = '<div style="text-align:center;padding:60px;color:var(--text-dim)"><div style="font-size:48px;margin-bottom:16px;opacity:0.3">📝</div><p style="font-size:16px">Belum ada quiz. Buat quiz pertama anda!</p></div>';
@@ -75,7 +79,7 @@ BB.ui.dashboard = function (user, quizSets) {
     '<div class="dashboard-inner">' +
       '<div class="dashboard-header"><div>' +
         '<h1 class="dashboard-title">BUZZER BATTLE</h1>' +
-        '<p style="color:var(--text-dim);font-size:14px;margin-top:4px">Selamat datang, <span style="color:var(--accent2);font-weight:600">' + name + '</span></p>' +
+        '<p style="color:var(--text-dim);font-size:14px;margin-top:4px">Selamat datang, <span style="color:var(--accent2);font-weight:600">' + name + '</span> ' + premiumBadge + '</p>' +
       '</div>' +
       '<button class="bb-btn" onclick="BB.app.logout()" style="background:transparent;color:var(--text-dim);border:1px solid var(--border);padding:8px 16px;font-size:13px">' + BB.SVG.logout + ' Log Keluar</button></div>' +
       '<button class="bb-btn" onclick="BB.app.newQuiz()" style="background:linear-gradient(135deg,var(--accent2),#00b0ff);color:#fff;font-size:16px;padding:16px 32px;margin-bottom:32px;box-shadow:0 4px 16px rgba(0,153,221,0.25)">' + BB.SVG.plus + ' Buat Quiz Baru</button>' +
@@ -121,7 +125,7 @@ BB.ui.editor = function (title, questions, isEdit) {
       qs +
       '<div style="display:flex;gap:12px;margin-bottom:20px">' +
         '<button class="bb-btn" onclick="BB.app.addQ()" style="flex:1;background:transparent;color:var(--accent2);border:2px dashed var(--accent2);font-size:15px;padding:18px 0;border-radius:16px">' + BB.SVG.plus + ' Tambah Soalan</button>' +
-        '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px rgba(156,39,176,0.3)">🤖 Jana AI</button>' +
+        '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:' + (BB.app.state.isPremium ? 'linear-gradient(135deg,#9c27b0,#e040fb)' : 'linear-gradient(135deg,#ff9800,#ff5722)') + ';color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px ' + (BB.app.state.isPremium ? 'rgba(156,39,176,0.3)' : 'rgba(255,152,0,0.3)') + '">' + (BB.app.state.isPremium ? '🤖 Jana AI' : '👑 Jana AI') + '</button>' +
       '</div>' +
       '<button class="bb-btn" id="saveBtn" onclick="BB.app.saveQuiz()" style="font-size:17px;padding:16px 0;width:100%">💾 Simpan (' + questions.length + ' soalan)</button>' +
     '</div></div>';
@@ -502,15 +506,49 @@ BB.ui.results = function (roomData, isHost) {
     '</div></div>';
 };
 
+// ─── Upgrade Modal ───
+BB.ui.upgradeModal = function () {
+  return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
+    '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">' +
+      '<div style="font-size:56px;margin-bottom:12px">👑</div>' +
+      '<h3 style="font-size:22px;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#ff9800,#ff5722);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Upgrade ke Premium</h3>' +
+      '<p style="color:var(--text-dim);font-size:14px;margin-bottom:24px">Jana soalan AI memerlukan langganan Premium</p>' +
+      '<div style="background:linear-gradient(135deg,rgba(255,152,0,0.06),rgba(255,87,34,0.06));border:1px solid rgba(255,152,0,0.2);border-radius:16px;padding:20px;margin-bottom:24px;text-align:left">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:24px">🤖</span><span style="font-weight:700;font-size:16px">Jana AI — Soalan Automatik</span></div>' +
+        '<ul style="list-style:none;padding:0;margin:0;font-size:14px;color:var(--text)">' +
+          '<li style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:var(--success)">✓</span> Jana soalan kuiz dengan AI</li>' +
+          '<li style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:var(--success)">✓</span> Sehingga 60 soalan sehari</li>' +
+          '<li style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:var(--success)">✓</span> Semua subjek & tahap</li>' +
+          '<li style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:var(--success)">✓</span> Bahasa Melayu & English</li>' +
+        '</ul>' +
+      '</div>' +
+      '<div style="background:#f5f7fa;border-radius:14px;padding:16px;margin-bottom:24px;text-align:center">' +
+        '<p style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Harga sekali bayar</p>' +
+        '<p style="font-size:36px;font-weight:800;color:var(--accent3);font-family:Bungee,cursive">' + BB.PREMIUM_PRICE + '</p>' +
+        '<p style="font-size:12px;color:var(--text-dim)">Bayaran melalui FPX (Online Banking)</p>' +
+      '</div>' +
+      '<div style="display:flex;gap:12px;width:100%">' +
+        '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:#f0f2f5;color:var(--text);border:1px solid var(--border);padding:14px 0;font-size:15px">Batal</button>' +
+        '<button class="bb-btn" id="upgradeBtn" onclick="BB.app.upgradePremium()" style="flex:1;background:linear-gradient(135deg,#ff9800,#ff5722);color:#fff;padding:14px 0;font-size:15px;box-shadow:0 4px 16px rgba(255,152,0,0.3)">👑 Bayar ' + BB.PREMIUM_PRICE + '</button>' +
+      '</div></div></div>';
+};
+
 // ─── AI Generate Modal ───
-BB.ui.aiModal = function () {
+BB.ui.aiModal = function (aiUsage) {
+  var today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  var todayCount = (aiUsage && aiUsage.date === today) ? (aiUsage.count || 0) : 0;
+  var remaining = Math.max(0, BB.PREMIUM_DAILY_LIMIT - todayCount);
+  var usageInfo = '<div style="background:rgba(0,153,221,0.06);border:1px solid rgba(0,153,221,0.15);border-radius:10px;padding:10px 14px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">' +
+    '<span style="font-size:13px;color:var(--text-dim)">Had hari ini:</span>' +
+    '<span style="font-weight:700;font-size:14px;color:' + (remaining > 10 ? 'var(--accent2)' : remaining > 0 ? 'var(--accent3)' : 'var(--danger)') + '">' + remaining + '/' + BB.PREMIUM_DAILY_LIMIT + ' soalan tinggal</span></div>';
   var labelStyle = 'color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px';
   var selectStyle = 'font-size:15px;padding:10px 14px';
   return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
     '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px">' +
       '<div style="font-size:48px;margin-bottom:12px">🤖</div>' +
       '<h3 style="font-size:20px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#9c27b0,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Jana Soalan AI</h3>' +
-      '<p style="color:var(--text-dim);font-size:13px;margin-bottom:24px">Powered by Gemini</p>' +
+      '<p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">Powered by Gemini</p>' +
+      usageInfo +
       '<div style="text-align:left;width:100%">' +
         // Subject dropdown
         '<div style="margin-bottom:16px"><label style="' + labelStyle + '">Subjek</label>' +
