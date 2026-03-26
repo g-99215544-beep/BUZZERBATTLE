@@ -33,6 +33,7 @@ async function verifyAuth(req) {
 // ═══════════════════════════════════════
 exports.generateQuiz = onRequest(
   {
+    region: "asia-southeast1",
     secrets: [geminiApiKey],
     timeoutSeconds: 60,
     memory: "256MiB",
@@ -169,6 +170,7 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
 // ═══════════════════════════════════════
 exports.createBill = onRequest(
   {
+    region: "asia-southeast1",
     secrets: [toyyibpaySecret, toyyibpayCategoryCode, toyyibpayCallbackUrl, toyyibpayReturnUrl],
     timeoutSeconds: 30,
     memory: "256MiB",
@@ -261,6 +263,7 @@ exports.createBill = onRequest(
 // ═══════════════════════════════════════
 exports.paymentCallback = onRequest(
   {
+    region: "asia-southeast1",
     timeoutSeconds: 30,
     memory: "256MiB",
   },

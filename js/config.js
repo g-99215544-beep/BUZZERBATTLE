@@ -24,7 +24,7 @@ BB.PODIUM_COLORS = ["#ffe046", "#c0c0c0", "#cd7f32"];
 // ─── Premium Config ───
 BB.PREMIUM_PRICE = "RM15";
 BB.PREMIUM_DAILY_LIMIT = 60;
-BB.CLOUD_FUNCTIONS_URL = "https://us-central1-livequiz-953f6.cloudfunctions.net";
+BB.CLOUD_FUNCTIONS_URL = "https://asia-southeast1-livequiz-953f6.cloudfunctions.net";
 
 BB.generateRoomCode = function () {
   var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
