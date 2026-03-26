@@ -21,6 +21,11 @@ BB.SLOT_COLORS = ["#ff3e6c", "#00e5ff", "#ffe046"];
 BB.MEDALS = ["🥇", "🥈", "🥉"];
 BB.PODIUM_COLORS = ["#ffe046", "#c0c0c0", "#cd7f32"];
 
+// ─── Premium Config ───
+BB.PREMIUM_PRICE = "RM15";
+BB.PREMIUM_DAILY_LIMIT = 60;
+BB.CLOUD_FUNCTIONS_URL = "https://asia-southeast1-livequiz-953f6.cloudfunctions.net";
+
 BB.generateRoomCode = function () {
   var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   var code = "";
@@ -41,6 +46,7 @@ BB.SVG = {
   check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
   users: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
   copy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
+  crown: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 19h19v2h-19zM22.5 7l-5 5-5-7-5 7-5-5 2.5 12h15z"/></svg>',
   lock: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>',
   unlock: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>',
 };
