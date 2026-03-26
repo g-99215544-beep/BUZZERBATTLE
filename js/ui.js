@@ -347,16 +347,22 @@ BB.ui.hostLive = function (roomData) {
   if (isSingle) {
     var hostLives = roomData.hostLives != null ? roomData.hostLives : 3;
     var hostScore = roomData.hostScore || 0;
-    spScore = '<div class="scoreboard-center" style="margin-bottom:6px"><div class="scoreboard-chip-big" style="border:2px solid var(--accent);box-shadow:0 0 15px rgba(255,62,108,0.2);padding:8px 20px">' +
-      '<span style="font-size:18px">🎮</span>' +
-      '<div style="text-align:center"><span style="font-weight:700;font-size:13px;display:block">' + BB.esc(roomData.hostName || 'Host') + (hostLives <= 0 ? ' 💀' : '') + '</span>' +
-      '<div style="margin:1px 0">' + (function(){ var h=''; for(var i=0;i<3;i++) h+='<span style="font-size:12px">'+(i<hostLives?'❤️':'🖤')+'</span>'; return h; })() + '</div>' +
-      '<span class="font-bungee" style="font-size:22px;color:var(--accent3)">' + hostScore + '</span></div></div></div>';
+    spScore = '<div class="solo-score-inline">' +
+      '<span style="font-weight:700;font-size:12px;color:var(--text-dim)">' + BB.esc(roomData.hostName || 'Host') + (hostLives <= 0 ? ' 💀' : '') + '</span>' +
+      '<span style="margin:0 4px">' + (function(){ var h=''; for(var i=0;i<3;i++) h+='<span style="font-size:11px">'+(i<hostLives?'❤️':'🖤')+'</span>'; return h; })() + '</span>' +
+      '<span class="font-bungee" style="font-size:16px;color:var(--accent3)">' + hostScore + '</span></div>';
   }
 
   return '<div class="screen-live-host' + (isSingle ? ' solo-screen' : '') + '">' + BB.ui.fsBtn() +
-    '<div style="text-align:center;margin-bottom:' + (isSingle ? '4px' : '8px') + '"><span class="live-tag">⚡ ' + (isSingle ? 'SOLO' : 'LIVE') + '</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
-    (isSingle ? spScore : '<div class="scoreboard-center">' + sb + '</div>') +
+    (isSingle ?
+      '<div class="solo-header-row">' +
+        '<div><span class="live-tag">⚡ SOLO</span><span style="color:var(--text-dim);font-size:13px;margin-left:8px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
+        spScore +
+      '</div>'
+    :
+      '<div style="text-align:center;margin-bottom:8px"><span class="live-tag">⚡ LIVE</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
+      '<div class="scoreboard-center">' + sb + '</div>'
+    ) +
     timerBar +
     (isSingle ?
       '<div style="flex:1;display:flex;flex-direction:column;align-items:center;max-width:900px;margin:0 auto;width:100%;min-height:0">' +

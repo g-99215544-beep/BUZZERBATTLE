@@ -319,7 +319,16 @@ textarea.bb-input { resize: vertical; }
 }
 .screen-live-host.solo-screen {
   height: 100vh; max-height: 100vh; overflow: hidden;
-  padding: 12px 20px;
+  padding: 10px 16px;
+}
+.solo-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.solo-score-inline {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff; border: 1.5px solid var(--accent); border-radius: 10px;
+  padding: 4px 12px; box-shadow: 0 1px 4px rgba(255,62,108,0.12);
 }
 .live-topbar {
   display: flex; align-items: center; justify-content: space-between;
