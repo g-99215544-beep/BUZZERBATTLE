@@ -148,6 +148,16 @@
     roomListenerCode = code;
     BB.fire.listenRoom(code, function (data) {
       if (!data) { S.roomData = null; return; }
+      // Check if only timerRemaining changed (skip full re-render to avoid flicker)
+      var prev = S.roomData;
+      var timerOnly = prev && data &&
+        prev.status === data.status &&
+        prev.currentQuestionIndex === data.currentQuestionIndex &&
+        prev.lastAnswer === data.lastAnswer &&
+        prev.buzzedBy === data.buzzedBy &&
+        prev.hostScore === data.hostScore &&
+        prev.hostLives === data.hostLives &&
+        prev.timerRemaining !== data.timerRemaining;
       S.roomData = data;
 
       // Force fullscreen for players when host triggers it
@@ -164,6 +174,8 @@
         if (S.screen === "hostWaiting") S.screen = "liveHost";
         if (S.screen === "playerWaiting") S.screen = "livePlayer";
       }
+      // Skip full re-render if only timer changed (DOM updated directly by timer interval)
+      if (timerOnly) return;
       render();
     });
   }
@@ -369,6 +381,8 @@
     clearGameTimer();
     var timerSec = S.roomData && S.roomData.timerSeconds ? S.roomData.timerSeconds : 0;
     if (!timerSec || timerSec <= 0) return;
+    // Set initial value in Firebase and local state
+    S.roomData.timerRemaining = timerSec;
     BB.fire.setRoomField(S.roomCode, "timerRemaining", timerSec);
     timerInterval = setInterval(async function () {
       if (!S.roomData) { clearGameTimer(); return; }
@@ -379,7 +393,23 @@
         // Time's up! Handle timeout
         await handleTimeout();
       } else {
-        BB.fire.setRoomField(S.roomCode, "timerRemaining", remaining);
+        // Update local state directly (no Firebase write = no re-render flicker)
+        S.roomData.timerRemaining = remaining;
+        // Update timer DOM directly instead of full re-render
+        var timerText = document.getElementById('timer-text');
+        var timerFill = document.getElementById('timer-fill');
+        if (timerText && timerFill) {
+          var pct = Math.round((remaining / timerSec) * 100);
+          var timerColor = pct > 50 ? 'var(--success)' : pct > 20 ? 'var(--accent3)' : 'var(--danger)';
+          timerText.textContent = '⏱️ ' + remaining + 's';
+          timerText.style.color = timerColor;
+          timerFill.style.width = pct + '%';
+          timerFill.style.background = timerColor;
+        }
+        // Sync to Firebase less frequently (every 5 seconds) for multiplayer
+        if (remaining % 5 === 0) {
+          BB.fire.setRoomField(S.roomCode, "timerRemaining", remaining);
+        }
       }
     }, 1000);
   }

@@ -263,40 +263,43 @@ BB.ui.hostLive = function (roomData) {
   if (timerSeconds > 0 && timerRemaining >= 0 && !lastAnswer) {
     var pct = Math.round((timerRemaining / timerSeconds) * 100);
     var timerColor = pct > 50 ? 'var(--success)' : pct > 20 ? 'var(--accent3)' : 'var(--danger)';
-    timerBar = '<div class="timer-bar-wrap" style="width:100%;max-width:900px;margin:0 auto 16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;color:' + timerColor + ';font-size:18px">⏱️ ' + timerRemaining + 's</span></div>' +
-      '<div style="background:#e0e4ea;border-radius:8px;height:10px;overflow:hidden"><div style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
+    timerBar = '<div class="timer-bar-wrap" style="width:100%;max-width:900px;margin:0 auto 8px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span id="timer-text" style="font-weight:700;color:' + timerColor + ';font-size:16px">⏱️ ' + timerRemaining + 's</span></div>' +
+      '<div style="background:#e0e4ea;border-radius:8px;height:8px;overflow:hidden"><div id="timer-fill" style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
   }
 
-  // Options - uniform color, highlight correct/wrong after answer
+  // Options - for single player, make them clickable; for multiplayer, display-only
   var opts = '';
-  q.options.forEach(function (opt, oi) {
-    var isCorrect = lastAnswer && oi === q.correctIndex;
-    var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
-    var bgColor = isCorrect ? 'rgba(0,200,83,0.1)' : isWrong ? 'rgba(255,62,108,0.08)' : '#f5f7fa';
-    var borderColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
-    var labelColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
-    opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + bgColor + ';border-color:' + borderColor + '">' +
-      '<span class="option-label" style="color:' + labelColor + '">' + BB.OPT_LABELS[oi] + '</span>' +
-      '<span class="option-text">' + BB.esc(opt) + '</span>' +
-      (isCorrect ? '<span style="margin-left:auto;font-size:20px;color:var(--success)">✓</span>' : '') +
-      (isWrong ? '<span style="margin-left:auto;font-size:20px;color:var(--danger)">✗</span>' : '') +
-    '</div>';
-  });
+  if (isSingle && (status === "buzzer_open" || status === "buzzer_locked") && !lastAnswer) {
+    // Single player: clickable answer options directly in the question card
+    q.options.forEach(function (opt, oi) {
+      var optColor = BB.OPT_COLORS[oi];
+      opts += '<button class="answer-option-btn" onclick="BB.app.singleAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
+        '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
+    });
+  } else {
+    // Multiplayer or after answer: display-only options
+    q.options.forEach(function (opt, oi) {
+      var isCorrect = lastAnswer && oi === q.correctIndex;
+      var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
+      var bgColor = isCorrect ? 'rgba(0,200,83,0.1)' : isWrong ? 'rgba(255,62,108,0.08)' : '#f5f7fa';
+      var borderColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
+      var labelColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : 'var(--accent2)';
+      opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + bgColor + ';border-color:' + borderColor + '">' +
+        '<span class="option-label" style="color:' + labelColor + '">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span class="option-text">' + BB.esc(opt) + '</span>' +
+        (isCorrect ? '<span style="margin-left:auto;font-size:20px;color:var(--success)">✓</span>' : '') +
+        (isWrong ? '<span style="margin-left:auto;font-size:20px;color:var(--danger)">✗</span>' : '') +
+      '</div>';
+    });
+  }
 
   // Center action
   var action = '';
 
-  // SINGLE PLAYER MODE: host answers directly
+  // SINGLE PLAYER MODE: answer result / next question buttons only (answers are in the question card)
   if (isSingle && (status === "buzzer_open" || status === "buzzer_locked") && !lastAnswer) {
-    var spBtns = '';
-    q.options.forEach(function (opt, oi) {
-      var optColor = BB.OPT_COLORS[oi];
-      spBtns += '<button class="answer-option-btn" onclick="BB.app.singleAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
-        '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
-        '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
-    });
-    action = '<div style="text-align:center;margin-bottom:8px"><span class="font-bungee" style="font-size:20px;color:var(--accent2)">🎮 PILIH JAWAPAN ANDA</span></div>' +
-      '<div class="flex flex-col gap-12" style="width:100%;max-width:500px">' + spBtns + '</div>';
+    action = ''; // No separate action needed - answers are clickable in the question card
   } else if ((status === "buzzer_locked" || status === "buzzer_open") && !buzzedBy && !lastAnswer) {
     action = '<div style="text-align:center;animation:pulse 1s infinite"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">' + BB.SVG.unlock + '<span class="font-bungee" style="font-size:22px;color:var(--accent2)">BUZZER TERBUKA!</span></div><p style="color:var(--text-dim);font-size:16px">Menunggu pemain tekan buzzer...</p></div>';
   } else if (buzzedBy && status === "buzzed") {
@@ -329,22 +332,22 @@ BB.ui.hostLive = function (roomData) {
   if (isSingle) {
     var hostLives = roomData.hostLives != null ? roomData.hostLives : 3;
     var hostScore = roomData.hostScore || 0;
-    spScore = '<div class="scoreboard-center"><div class="scoreboard-chip-big" style="border:2px solid var(--accent);box-shadow:0 0 15px rgba(255,62,108,0.2)">' +
-      '<span style="font-size:20px">🎮</span>' +
-      '<div style="text-align:center"><span style="font-weight:700;font-size:15px;display:block">' + BB.esc(roomData.hostName || 'Host') + (hostLives <= 0 ? ' 💀' : '') + '</span>' +
-      '<div style="margin:2px 0">' + (function(){ var h=''; for(var i=0;i<3;i++) h+='<span style="font-size:14px">'+(i<hostLives?'❤️':'🖤')+'</span>'; return h; })() + '</div>' +
-      '<span class="font-bungee" style="font-size:28px;color:var(--accent3)">' + hostScore + '</span></div></div></div>';
+    spScore = '<div class="scoreboard-center" style="margin-bottom:6px"><div class="scoreboard-chip-big" style="border:2px solid var(--accent);box-shadow:0 0 15px rgba(255,62,108,0.2);padding:8px 20px">' +
+      '<span style="font-size:18px">🎮</span>' +
+      '<div style="text-align:center"><span style="font-weight:700;font-size:13px;display:block">' + BB.esc(roomData.hostName || 'Host') + (hostLives <= 0 ? ' 💀' : '') + '</span>' +
+      '<div style="margin:1px 0">' + (function(){ var h=''; for(var i=0;i<3;i++) h+='<span style="font-size:12px">'+(i<hostLives?'❤️':'🖤')+'</span>'; return h; })() + '</div>' +
+      '<span class="font-bungee" style="font-size:22px;color:var(--accent3)">' + hostScore + '</span></div></div></div>';
   }
 
-  return '<div class="screen-live-host">' + BB.ui.fsBtn() +
-    '<div style="text-align:center;margin-bottom:8px"><span class="live-tag">⚡ ' + (isSingle ? 'SOLO' : 'LIVE') + '</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
+  return '<div class="screen-live-host' + (isSingle ? ' solo-screen' : '') + '">' + BB.ui.fsBtn() +
+    '<div style="text-align:center;margin-bottom:' + (isSingle ? '4px' : '8px') + '"><span class="live-tag">⚡ ' + (isSingle ? 'SOLO' : 'LIVE') + '</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
     (isSingle ? spScore : '<div class="scoreboard-center">' + sb + '</div>') +
     timerBar +
-    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
-      '<div class="question-display"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '</p>' +
+    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%;' + (isSingle ? 'min-height:0;overflow:auto' : '') + '">' +
+      '<div class="question-display' + (isSingle ? ' solo-question' : '') + '"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:' + (isSingle ? '8px' : '12px') + '">Soalan ' + (qi + 1) + '</p>' +
         '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
-        '<div class="options-grid" style="gap:14px">' + opts + '</div></div>' +
-      '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:500px">' + action + '</div>' +
+        '<div class="' + (isSingle && !lastAnswer ? 'solo-options-list' : 'options-grid') + '" style="gap:' + (isSingle ? '8px' : '14px') + '">' + opts + '</div></div>' +
+      (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:500px">' + action + '</div>' : '') +
     '</div></div>';
 };
 
