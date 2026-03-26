@@ -8,6 +8,8 @@ admin.initializeApp();
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const toyyibpaySecret = defineSecret("TOYYIBPAY_SECRET");
 const toyyibpayCategoryCode = defineSecret("TOYYIBPAY_CATEGORY_CODE");
+const toyyibpayCallbackUrl = defineSecret("TOYYIBPAY_CALLBACK_URL");
+const toyyibpayReturnUrl = defineSecret("TOYYIBPAY_RETURN_URL");
 
 // ─── HELPER: Get today's date string (Malaysia timezone) ───
 function getTodayMY() {
@@ -167,7 +169,7 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
 // ═══════════════════════════════════════
 exports.createBill = onRequest(
   {
-    secrets: [toyyibpaySecret, toyyibpayCategoryCode],
+    secrets: [toyyibpaySecret, toyyibpayCategoryCode, toyyibpayCallbackUrl, toyyibpayReturnUrl],
     timeoutSeconds: 30,
     memory: "256MiB",
     cors: true,
@@ -196,8 +198,8 @@ exports.createBill = onRequest(
     }
 
     try {
-      const callbackUrl = "https://us-central1-livequiz-953f6.cloudfunctions.net/paymentCallback";
-      const returnUrl = "https://livequiz-953f6.firebaseapp.com/?payment=success";
+      const callbackUrl = toyyibpayCallbackUrl.value();
+      const returnUrl = toyyibpayReturnUrl.value();
 
       const params = new URLSearchParams();
       params.append("userSecretKey", toyyibpaySecret.value());
