@@ -236,11 +236,19 @@ exports.createBill = onRequest(
         body: params,
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.error("ToyyibPay returned non-JSON:", responseText);
+        res.status(500).json({ error: "ToyyibPay error: " + responseText.substring(0, 100) });
+        return;
+      }
 
       if (!data || !data[0] || !data[0].BillCode) {
         console.error("ToyyibPay createBill error:", data);
-        res.status(500).json({ error: "Gagal mencipta bil pembayaran." });
+        res.status(500).json({ error: "Gagal mencipta bil: " + JSON.stringify(data).substring(0, 100) });
         return;
       }
 
