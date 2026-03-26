@@ -224,7 +224,7 @@ exports.createBill = onRequest(
       params.append("billExternalReferenceNo", uid);
       params.append("billTo", name);
       params.append("billEmail", email);
-      params.append("billPhone", "");
+      params.append("billPhone", decoded.phone_number || "0000000000");
       params.append("billSplitPayment", "0");
       params.append("billSplitPaymentArgs", "");
       params.append("billPaymentChannel", "2"); // FPX only
