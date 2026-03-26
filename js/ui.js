@@ -277,8 +277,23 @@ BB.ui.hostLive = function (roomData) {
         '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
         '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
     });
+  } else if (isSingle && lastAnswer) {
+    // Single player after answer: compact 2x2 grid with correct/wrong highlights
+    q.options.forEach(function (opt, oi) {
+      var isCorrect = lastAnswer && oi === q.correctIndex;
+      var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
+      var bgColor = isCorrect ? 'rgba(0,200,83,0.15)' : isWrong ? 'rgba(255,62,108,0.1)' : '#f5f7fa';
+      var borderColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : '#e0e4ea';
+      var labelColor = isCorrect ? 'var(--success)' : isWrong ? 'var(--danger)' : '#999';
+      opts += '<div class="option-display' + (isCorrect ? ' correct' : '') + (isWrong ? ' wrong' : '') + '" style="background:' + bgColor + ';border-color:' + borderColor + ';padding:10px 14px">' +
+        '<span class="option-label" style="color:' + labelColor + ';font-size:16px;width:28px">' + BB.OPT_LABELS[oi] + '</span>' +
+        '<span class="option-text" style="font-size:clamp(14px,2vw,18px)">' + BB.esc(opt) + '</span>' +
+        (isCorrect ? '<span style="margin-left:auto;font-size:16px;color:var(--success)">✓</span>' : '') +
+        (isWrong ? '<span style="margin-left:auto;font-size:16px;color:var(--danger)">✗</span>' : '') +
+      '</div>';
+    });
   } else {
-    // Multiplayer or after answer: display-only options
+    // Multiplayer: display-only options
     q.options.forEach(function (opt, oi) {
       var isCorrect = lastAnswer && oi === q.correctIndex;
       var isWrong = lastAnswer && lastAnswer.selectedIndex === oi && !lastAnswer.correct;
@@ -343,12 +358,24 @@ BB.ui.hostLive = function (roomData) {
     '<div style="text-align:center;margin-bottom:' + (isSingle ? '4px' : '8px') + '"><span class="live-tag">⚡ ' + (isSingle ? 'SOLO' : 'LIVE') + '</span><span style="color:var(--text-dim);font-size:13px;margin-left:12px">Soalan ' + (qi + 1) + '/' + questions.length + '</span></div>' +
     (isSingle ? spScore : '<div class="scoreboard-center">' + sb + '</div>') +
     timerBar +
-    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%;' + (isSingle ? 'min-height:0;overflow:auto' : '') + '">' +
-      '<div class="question-display' + (isSingle ? ' solo-question' : '') + '"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:' + (isSingle ? '8px' : '12px') + '">Soalan ' + (qi + 1) + '</p>' +
-        '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
-        '<div class="' + (isSingle && !lastAnswer ? 'solo-options-list' : 'options-grid') + '" style="gap:' + (isSingle ? '8px' : '14px') + '">' + opts + '</div></div>' +
-      (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:500px">' + action + '</div>' : '') +
-    '</div></div>';
+    (isSingle ?
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;max-width:900px;margin:0 auto;width:100%;min-height:0">' +
+        '<div class="question-display solo-question">' +
+          '<p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px">Soalan ' + (qi + 1) + '</p>' +
+          '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+          '<div class="solo-options-grid">' + opts + '</div>' +
+        '</div>' +
+        (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:500px;margin-top:8px">' + action + '</div>' : '') +
+      '</div>'
+    :
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
+        '<div class="question-display"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '</p>' +
+          '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+          '<div class="options-grid" style="gap:14px">' + opts + '</div></div>' +
+        (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:500px">' + action + '</div>' : '') +
+      '</div>'
+    ) +
+    '</div>';
 };
 
 // ═══════════════════════════════════════
