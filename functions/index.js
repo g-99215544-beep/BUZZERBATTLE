@@ -284,18 +284,37 @@ exports.paymentCallback = onRequest(
     memory: "256MiB",
   },
   async (req, res) => {
-    // ToyyibPay sends callback as POST with form data
-    const {
-      refno,
-      status,
-      reason,
-      billcode,
-      order_id,
-      amount,
-      transaction_time,
-    } = req.body || {};
+    // ToyyibPay sends callback as POST with form data (URL-encoded)
+    // Parse body from multiple sources as fallback
+    let body = req.body || {};
+
+    // If body is a string (raw), parse it manually
+    if (typeof body === "string") {
+      try {
+        const parsed = {};
+        body.split("&").forEach(function (pair) {
+          const parts = pair.split("=");
+          parsed[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || "");
+        });
+        body = parsed;
+      } catch (e) {
+        console.error("Failed to parse body string:", body);
+      }
+    }
+
+    // Also check query params as fallback
+    const refno = body.refno || req.query.refno;
+    const status = body.status || req.query.status;
+    const reason = body.reason || req.query.reason;
+    const billcode = body.billcode || req.query.billcode;
+    const order_id = body.order_id || req.query.order_id;
+    const amount = body.amount || req.query.amount;
+    const transaction_time = body.transaction_time || req.query.transaction_time;
 
     console.log("Payment callback received:", { refno, status, billcode, order_id, amount });
+    console.log("Raw body:", JSON.stringify(req.body));
+    console.log("Query:", JSON.stringify(req.query));
+    console.log("Content-Type:", req.headers["content-type"]);
 
     if (!billcode) {
       res.status(400).send("Missing billcode");
@@ -314,7 +333,7 @@ exports.paymentCallback = onRequest(
       }
 
       // Status "1" = success, "2" = pending, "3" = failed
-      if (status === "1") {
+      if (String(status) === "1") {
         const uid = payment.uid;
 
         // Upgrade user to premium (30 days from now)
@@ -341,7 +360,7 @@ exports.paymentCallback = onRequest(
         console.log("User upgraded to premium:", uid);
       } else {
         await paymentRef.update({
-          status: status === "3" ? "failed" : "pending",
+          status: String(status) === "3" ? "failed" : "pending",
           reason: reason || "",
         });
       }
