@@ -16,6 +16,12 @@ function getTodayMY() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 }
 
+// ─── HELPER: Check if premium is still active ───
+function isPremiumActive(userData) {
+  if (!userData || !userData.premiumExpiry) return false;
+  return Date.now() < userData.premiumExpiry;
+}
+
 // ─── HELPER: Verify Firebase Auth token ───
 async function verifyAuth(req) {
   const authHeader = req.headers.authorization || "";
@@ -58,8 +64,8 @@ exports.generateQuiz = onRequest(
     const userSnap = await userRef.once("value");
     const userData = userSnap.val() || {};
 
-    if (!userData.premium) {
-      res.status(403).json({ error: "Ciri ini hanya untuk pengguna Premium. Sila upgrade ke Premium (RM15) untuk guna Jana AI.", premiumRequired: true });
+    if (!isPremiumActive(userData)) {
+      res.status(403).json({ error: "Langganan Premium anda telah tamat. Sila renew (RM15/bulan) untuk guna Jana AI.", premiumRequired: true });
       return;
     }
 
@@ -192,10 +198,12 @@ exports.createBill = onRequest(
     const email = decoded.email || "";
     const name = decoded.name || email;
 
-    // Check if already premium
-    const userSnap = await admin.database().ref("buzzerBattle/users/" + uid + "/premium").once("value");
-    if (userSnap.val() === true) {
-      res.status(400).json({ error: "Anda sudah Premium!" });
+    // Check if premium is still active (allow renewal if expired)
+    const userSnap = await admin.database().ref("buzzerBattle/users/" + uid).once("value");
+    const uData = userSnap.val() || {};
+    if (isPremiumActive(uData)) {
+      var expiryDate = new Date(uData.premiumExpiry).toLocaleDateString("ms-MY", { timeZone: "Asia/Kuala_Lumpur" });
+      res.status(400).json({ error: "Premium anda masih aktif sehingga " + expiryDate + "." });
       return;
     }
 
@@ -206,8 +214,8 @@ exports.createBill = onRequest(
       const params = new URLSearchParams();
       params.append("userSecretKey", toyyibpaySecret.value());
       params.append("categoryCode", toyyibpayCategoryCode.value());
-      params.append("billName", "BuzzerBattle Premium");
-      params.append("billDescription", "Upgrade ke Premium - Jana AI tanpa had");
+      params.append("billName", "BuzzerBattle Premium (30 Hari)");
+      params.append("billDescription", "Langganan Premium 30 hari - Jana AI sehingga 60 soalan sehari");
       params.append("billPriceSetting", "1");
       params.append("billPayorInfo", "1");
       params.append("billAmount", "1500"); // RM15.00 in cents
@@ -301,10 +309,17 @@ exports.paymentCallback = onRequest(
       if (status === "1") {
         const uid = payment.uid;
 
-        // Upgrade user to premium
+        // Upgrade user to premium (30 days from now)
+        var now = Date.now();
+        var thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        var currentExpiry = (await admin.database().ref("buzzerBattle/users/" + uid + "/premiumExpiry").once("value")).val() || 0;
+        // If still active, extend from current expiry; otherwise from now
+        var baseTime = (currentExpiry > now) ? currentExpiry : now;
         await admin.database().ref("buzzerBattle/users/" + uid).update({
           premium: true,
-          premiumSince: Date.now(),
+          premiumExpiry: baseTime + thirtyDays,
+          premiumSince: now,
+          lastPaymentAt: now,
         });
 
         // Update payment record

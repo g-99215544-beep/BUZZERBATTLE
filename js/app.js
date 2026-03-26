@@ -27,6 +27,7 @@
       deleteTitle: "",
       // Premium
       isPremium: false,
+      premiumExpiry: 0,
       aiUsage: {},
     },
   };
@@ -699,8 +700,9 @@
           if (S.screen === "dashboard") render();
         });
         // Listen for premium status
-        BB.fire.listenPremium(user.uid, function (isPremium) {
+        BB.fire.listenPremium(user.uid, function (isPremium, expiry) {
           S.isPremium = isPremium;
+          S.premiumExpiry = expiry || 0;
           if (S.screen === "dashboard") render();
         });
         // Listen for AI usage
@@ -716,6 +718,7 @@
       } else {
         S.screen = "landing";
         S.isPremium = false;
+        S.premiumExpiry = 0;
         S.aiUsage = {};
       }
       render();

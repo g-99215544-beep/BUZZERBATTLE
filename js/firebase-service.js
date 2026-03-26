@@ -129,8 +129,13 @@
 
     // ─── PREMIUM STATUS ───
     listenPremium: function (uid, cb) {
-      var ref = db.ref("buzzerBattle/users/" + uid + "/premium");
-      ref.on("value", function (snap) { cb(snap.val() === true); });
+      var ref = db.ref("buzzerBattle/users/" + uid);
+      ref.on("value", function (snap) {
+        var data = snap.val() || {};
+        var expiry = data.premiumExpiry || 0;
+        var isActive = Date.now() < expiry;
+        cb(isActive, expiry);
+      });
       return ref;
     },
     listenAiUsage: function (uid, cb) {

@@ -54,9 +54,16 @@ BB.ui.landing = function () {
 BB.ui.dashboard = function (user, quizSets) {
   var name = BB.esc(user.displayName || user.email);
   var isPremium = BB.app.state.isPremium;
-  var premiumBadge = isPremium
-    ? '<span class="premium-badge">👑 PREMIUM</span>'
-    : '<button class="upgrade-badge" onclick="BB.app.showAiModal()">⚡ Upgrade Premium</button>';
+  var premiumExpiry = BB.app.state.premiumExpiry;
+  var premiumBadge;
+  if (isPremium) {
+    var expiryStr = new Date(premiumExpiry).toLocaleDateString("ms-MY", { timeZone: "Asia/Kuala_Lumpur", day: "numeric", month: "short", year: "numeric" });
+    premiumBadge = '<span class="premium-badge" title="Tamat: ' + expiryStr + '">👑 PREMIUM &middot; ' + expiryStr + '</span>';
+  } else if (premiumExpiry > 0) {
+    premiumBadge = '<button class="upgrade-badge" onclick="BB.app.showAiModal()" style="background:#fff3e0;color:#e65100;border-color:#ff9800">🔄 Renew Premium</button>';
+  } else {
+    premiumBadge = '<button class="upgrade-badge" onclick="BB.app.showAiModal()">⚡ Upgrade Premium</button>';
+  }
   var cards = '';
   if (quizSets.length === 0) {
     cards = '<div style="text-align:center;padding:60px;color:var(--text-dim)"><div style="font-size:48px;margin-bottom:16px;opacity:0.3">📝</div><p style="font-size:16px">Belum ada quiz. Buat quiz pertama anda!</p></div>';
@@ -508,11 +515,14 @@ BB.ui.results = function (roomData, isHost) {
 
 // ─── Upgrade Modal ───
 BB.ui.upgradeModal = function () {
+  var isRenewal = !BB.app.state.isPremium && BB.app.state.premiumExpiry > 0;
+  var title = isRenewal ? 'Renew Premium' : 'Upgrade ke Premium';
+  var subtitle = isRenewal ? 'Langganan anda telah tamat. Renew untuk terus guna Jana AI.' : 'Jana soalan AI memerlukan langganan Premium';
   return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
     '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">' +
-      '<div style="font-size:56px;margin-bottom:12px">👑</div>' +
-      '<h3 style="font-size:22px;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#ff9800,#ff5722);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Upgrade ke Premium</h3>' +
-      '<p style="color:var(--text-dim);font-size:14px;margin-bottom:24px">Jana soalan AI memerlukan langganan Premium</p>' +
+      '<div style="font-size:56px;margin-bottom:12px">' + (isRenewal ? '🔄' : '👑') + '</div>' +
+      '<h3 style="font-size:22px;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#ff9800,#ff5722);-webkit-background-clip:text;-webkit-text-fill-color:transparent">' + title + '</h3>' +
+      '<p style="color:var(--text-dim);font-size:14px;margin-bottom:24px">' + subtitle + '</p>' +
       '<div style="background:linear-gradient(135deg,rgba(255,152,0,0.06),rgba(255,87,34,0.06));border:1px solid rgba(255,152,0,0.2);border-radius:16px;padding:20px;margin-bottom:24px;text-align:left">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:24px">🤖</span><span style="font-weight:700;font-size:16px">Jana AI — Soalan Automatik</span></div>' +
         '<ul style="list-style:none;padding:0;margin:0;font-size:14px;color:var(--text)">' +
@@ -523,13 +533,13 @@ BB.ui.upgradeModal = function () {
         '</ul>' +
       '</div>' +
       '<div style="background:#f5f7fa;border-radius:14px;padding:16px;margin-bottom:24px;text-align:center">' +
-        '<p style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Harga sekali bayar</p>' +
-        '<p style="font-size:36px;font-weight:800;color:var(--accent3);font-family:Bungee,cursive">' + BB.PREMIUM_PRICE + '</p>' +
+        '<p style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Langganan bulanan (30 hari)</p>' +
+        '<p style="font-size:36px;font-weight:800;color:var(--accent3);font-family:Bungee,cursive">' + BB.PREMIUM_PRICE + '<span style="font-size:14px;font-weight:400;color:var(--text-dim)">/bulan</span></p>' +
         '<p style="font-size:12px;color:var(--text-dim)">Bayaran melalui FPX (Online Banking)</p>' +
       '</div>' +
       '<div style="display:flex;gap:12px;width:100%">' +
         '<button class="bb-btn" onclick="BB.app.closeModal()" style="flex:1;background:#f0f2f5;color:var(--text);border:1px solid var(--border);padding:14px 0;font-size:15px">Batal</button>' +
-        '<button class="bb-btn" id="upgradeBtn" onclick="BB.app.upgradePremium()" style="flex:1;background:linear-gradient(135deg,#ff9800,#ff5722);color:#fff;padding:14px 0;font-size:15px;box-shadow:0 4px 16px rgba(255,152,0,0.3)">👑 Bayar ' + BB.PREMIUM_PRICE + '</button>' +
+        '<button class="bb-btn" id="upgradeBtn" onclick="BB.app.upgradePremium()" style="flex:1;background:linear-gradient(135deg,#ff9800,#ff5722);color:#fff;padding:14px 0;font-size:15px;box-shadow:0 4px 16px rgba(255,152,0,0.3)">' + (isRenewal ? '🔄 Renew ' : '👑 Bayar ') + BB.PREMIUM_PRICE + '</button>' +
       '</div></div></div>';
 };
 
