@@ -595,6 +595,17 @@ textarea.bb-input { resize: vertical; }
 .q-image-btn:hover {
   background: #e0f0ff;
 }
+.q-image-actions {
+  display: flex;
+  gap: 8px;
+}
+.q-url-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  margin-top: 8px;
+}
 .q-image-preview {
   position: relative;
   display: inline-block;

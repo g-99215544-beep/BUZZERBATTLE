@@ -127,13 +127,20 @@ BB.ui.editor = function (title, questions, isEdit) {
       '<textarea class="bb-input" placeholder="Tulis soalan..." oninput="BB.app.updateQ(' + qi + ',\'question\',this.value)" rows="2" style="margin-bottom:12px;font-weight:500;font-size:15px">' + BB.esc(q.question) + '</textarea>' +
       '<div class="q-image-wrap">' +
         (q.imageUrl
-          ? '<div class="q-image-preview"><img src="' + BB.esc(q.imageUrl) + '" alt="Gambar soalan">' +
+          ? '<div class="q-image-preview"><img src="' + BB.esc(q.imageUrl) + '" alt="Gambar soalan" onerror="this.parentElement.innerHTML=\'<span style=color:var(--danger);font-size:12px>❌ Gambar gagal dimuatkan</span>\'">' +
             '<button class="q-image-remove" onclick="BB.app.removeImage(' + qi + ')" title="Buang gambar">✕</button></div>'
           : '') +
-        '<label class="q-image-btn" id="imgLabel' + qi + '">' +
-          '<input type="file" accept="image/*" onchange="BB.app.handleImageUpload(' + qi + ',this)" style="display:none">' +
-          (q.imageUrl ? '🔄 Tukar Gambar' : '🖼️ Lampir Gambar') +
-        '</label>' +
+        '<div class="q-image-actions">' +
+          '<label class="q-image-btn" id="imgLabel' + qi + '">' +
+            '<input type="file" accept="image/*" onchange="BB.app.handleImageUpload(' + qi + ',this)" style="display:none">' +
+            '📁 Fail' +
+          '</label>' +
+          '<button class="q-image-btn" onclick="BB.app.showUrlInput(' + qi + ')" type="button">🔗 URL</button>' +
+        '</div>' +
+        '<div class="q-url-input" id="urlWrap' + qi + '" style="display:none">' +
+          '<input class="bb-input" id="urlInput' + qi + '" placeholder="https://contoh.com/gambar.jpg" style="flex:1;padding:8px 12px;font-size:13px">' +
+          '<button class="bb-btn" onclick="BB.app.attachUrl(' + qi + ')" style="background:var(--accent2);color:#fff;padding:8px 14px;font-size:13px;white-space:nowrap">Lampir</button>' +
+        '</div>' +
       '</div>' +
       '<div class="options-grid">' + opts + '</div></div>';
   });
@@ -671,6 +678,13 @@ BB.ui.aiModal = function (aiUsage, isPremium, trialUsed) {
         // Topic / additional prompt
         '<label style="' + labelStyle + '">Topik Tambahan / Prompt (pilihan)</label>' +
         '<input class="bb-input" id="aiTopic" placeholder="cth: Pecahan, Tambah & Tolak" style="margin-bottom:16px;font-size:15px">' +
+        // Image question toggle
+        '<div style="margin-bottom:16px;background:rgba(156,39,176,0.06);border:1px solid rgba(156,39,176,0.15);border-radius:10px;padding:12px 14px">' +
+          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer">' +
+            '<input type="checkbox" id="aiWithImages" style="width:18px;height:18px;accent-color:#9c27b0">' +
+            '<div><span style="font-weight:700;font-size:14px">🖼️ Soalan Bergambar</span>' +
+            '<p style="font-size:12px;color:var(--text-dim);margin-top:2px">AI akan cari gambar dari internet dan lampir pada soalan (cth: Apakah haiwan ini?)</p></div>' +
+          '</label></div>' +
         // Number & Language row
         '<div style="display:flex;gap:12px;margin-bottom:20px">' +
           '<div style="flex:1"><label style="' + labelStyle + '">Bilangan Soalan</label>' +

@@ -264,6 +264,8 @@
     var topic = topicEl ? topicEl.value.trim() : "";
     var num = numEl ? parseInt(numEl.value) || 5 : 5;
     var lang = langEl ? langEl.value : "Malay";
+    var imgEl = document.getElementById("aiWithImages");
+    var withImages = imgEl ? imgEl.checked : false;
 
     if (!subject && !topic) { showToast("Sila pilih subjek atau masukkan topik.", "error"); return; }
 
@@ -272,9 +274,9 @@
     if (topic) fullTopic += (fullTopic ? " - " : "") + topic;
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="loading-spinner"></span> Menjana soalan...';
+    btn.innerHTML = '<span class="loading-spinner"></span> ' + (withImages ? 'Menjana soalan + cari gambar...' : 'Menjana soalan...');
     try {
-      var questions = await BB.fire.generateQuiz(fullTopic, num, lang, year, level);
+      var questions = await BB.fire.generateQuiz(fullTopic, num, lang, year, level, withImages);
       S.editorTitle = S.editorTitle || fullTopic;
       S.editorQuestions = S.editorQuestions.concat(questions);
       BB.app.closeModal();
@@ -328,6 +330,19 @@
       showToast("Gagal memuat naik gambar.", "error");
       if (label) label.textContent = "🖼️ Lampir Gambar";
     }
+  };
+  BB.app.showUrlInput = function (qi) {
+    var wrap = document.getElementById("urlWrap" + qi);
+    if (wrap) wrap.style.display = wrap.style.display === "none" ? "flex" : "none";
+  };
+  BB.app.attachUrl = function (qi) {
+    var input = document.getElementById("urlInput" + qi);
+    var url = input ? input.value.trim() : "";
+    if (!url) { showToast("Sila masukkan URL gambar.", "error"); return; }
+    if (!/^https?:\/\/.+/i.test(url)) { showToast("URL tidak sah. Mesti bermula dengan http:// atau https://", "error"); return; }
+    S.editorQuestions[qi].imageUrl = url;
+    render();
+    showToast("Gambar URL dilampirkan!");
   };
   BB.app.removeImage = async function (qi) {
     var url = S.editorQuestions[qi].imageUrl;

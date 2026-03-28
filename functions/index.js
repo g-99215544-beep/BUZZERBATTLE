@@ -6,6 +6,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
+const pixabayApiKey = defineSecret("PIXABAY_API_KEY");
 const toyyibpaySecret = defineSecret("TOYYIBPAY_SECRET");
 const toyyibpayCategoryCode = defineSecret("TOYYIBPAY_CATEGORY_CODE");
 const toyyibpayCallbackUrl = defineSecret("TOYYIBPAY_CALLBACK_URL");
@@ -40,7 +41,7 @@ async function verifyAuth(req) {
 exports.generateQuiz = onRequest(
   {
     region: "asia-southeast1",
-    secrets: [geminiApiKey],
+    secrets: [geminiApiKey, pixabayApiKey],
     timeoutSeconds: 60,
     memory: "256MiB",
     cors: true,
@@ -81,7 +82,7 @@ exports.generateQuiz = onRequest(
     const usage = usageSnap.val() || {};
     const todayCount = (usage.date === today) ? (usage.count || 0) : 0;
 
-    const { topic, numberOfQuestions, language, year, level } = req.body;
+    const { topic, numberOfQuestions, language, year, level, withImages } = req.body;
     const numQ = Math.min(Math.max(parseInt(numberOfQuestions) || 5, 1), 20);
 
     if (premium) {
@@ -116,6 +117,15 @@ exports.generateQuiz = onRequest(
     };
     const diffDesc = difficultyMap[diffLevel] || difficultyMap["Sederhana"];
 
+    const imageInstructions = withImages ? `
+- IMPORTANT: Each question MUST be an image-based question (e.g., "Apakah nama haiwan ini?", "Apakah bentuk ini?", "Siapakah tokoh dalam gambar ini?")
+- Each question MUST include an "imageKeyword" field — a SHORT English search term (1-3 words) to find the correct image on Pixabay (e.g., "tiger", "triangle shape", "Mount Kinabalu")
+- The imageKeyword must accurately represent the CORRECT ANSWER so the image matches the question
+- Make questions that work well with images: identify animals, plants, shapes, landmarks, flags, instruments, etc.` : '';
+
+    const imageFormat = withImages ? `
+    "imageKeyword": "english search keyword"` : '';
+
     const prompt = `Generate a quiz about "${topic.trim()}" with exactly ${numQ} multiple choice questions.
 
 Target student: ${studentYear} (Malaysian education system - KSSR/KSSM curriculum)
@@ -128,7 +138,7 @@ Rules:
 - Questions MUST be appropriate for ${studentYear} students
 - Difficulty level MUST be ${diffLevel}: ${diffDesc}
 - Wrong options should be plausible but clearly incorrect for students at this level
-- Each question is worth 10 points
+- Each question is worth 10 points${imageInstructions}
 
 Return ONLY a valid JSON array, no markdown, no explanation. Format:
 [
@@ -136,7 +146,7 @@ Return ONLY a valid JSON array, no markdown, no explanation. Format:
     "question": "Soalan di sini?",
     "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
     "correctIndex": 0,
-    "points": 10
+    "points": 10${imageFormat}
   }
 ]
 
@@ -162,7 +172,7 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
       }
 
       const sanitized = questions.map(function (q) {
-        return {
+        const sq = {
           question: String(q.question || ""),
           options: (q.options || []).slice(0, 4).map(function (o) {
             return String(o);
@@ -170,7 +180,31 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
           correctIndex: Math.min(Math.max(parseInt(q.correctIndex) || 0, 0), 3),
           points: parseInt(q.points) || 10,
         };
+        if (withImages && q.imageKeyword) {
+          sq.imageKeyword = String(q.imageKeyword);
+        }
+        return sq;
       });
+
+      // ─── Search Pixabay for images if withImages ───
+      if (withImages && pixabayApiKey.value()) {
+        await Promise.all(sanitized.map(async (q) => {
+          if (!q.imageKeyword) return;
+          try {
+            const searchUrl = `https://pixabay.com/api/?key=${encodeURIComponent(pixabayApiKey.value())}&q=${encodeURIComponent(q.imageKeyword)}&image_type=photo&per_page=5&safesearch=true`;
+            const imgResp = await fetch(searchUrl);
+            const imgData = await imgResp.json();
+            if (imgData.hits && imgData.hits.length > 0) {
+              // Pick a random image from top 5 results for variety
+              const pick = imgData.hits[Math.floor(Math.random() * Math.min(imgData.hits.length, 5))];
+              q.imageUrl = pick.webformatURL;
+            }
+          } catch (imgErr) {
+            console.error("Pixabay search failed for:", q.imageKeyword, imgErr);
+          }
+          delete q.imageKeyword;
+        }));
+      }
 
       // ─── Update usage counts ───
       await usageRef.set({
