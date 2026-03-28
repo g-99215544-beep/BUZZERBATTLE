@@ -3,13 +3,14 @@
    ═══════════════════════════════════════════ */
 
 (function () {
-  var db, auth, provider;
+  var db, auth, provider, storage;
 
   BB.fire = {
     init: function () {
       var app = firebase.initializeApp(BB.FIREBASE_CONFIG);
       db = firebase.database();
       auth = firebase.auth();
+      storage = firebase.storage();
       provider = new firebase.auth.GoogleAuthProvider();
     },
 
@@ -163,6 +164,24 @@
         throw new Error(err.error || "Gagal mencipta bil pembayaran");
       }
       return await resp.json();
+    },
+
+    // ─── IMAGE UPLOAD (Firebase Storage) ───
+    uploadQuestionImage: function (uid, quizId, questionIndex, file) {
+      var path = "buzzerBattle/" + uid + "/quizImages/" + (quizId || "new") + "/q" + questionIndex + "_" + Date.now();
+      var ref = storage.ref(path);
+      return ref.put(file).then(function () {
+        return ref.getDownloadURL();
+      });
+    },
+    deleteQuestionImage: function (imageUrl) {
+      if (!imageUrl) return Promise.resolve();
+      try {
+        var ref = storage.refFromURL(imageUrl);
+        return ref.delete().catch(function () { /* ignore if already deleted */ });
+      } catch (e) {
+        return Promise.resolve();
+      }
     },
 
     // ─── AI QUIZ GENERATION ───

@@ -30,6 +30,12 @@ BB.esc = function (s) {
   var d = document.createElement("div"); d.textContent = s; return d.innerHTML;
 };
 
+// ─── Question Image Helper ───
+BB.ui.qImg = function (q) {
+  if (!q || !q.imageUrl) return '';
+  return '<div class="q-image-live"><img src="' + BB.esc(q.imageUrl) + '" alt="Gambar soalan"></div>';
+};
+
 // ═══════════════════════════════════════
 //  LANDING PAGE
 // ═══════════════════════════════════════
@@ -118,7 +124,17 @@ BB.ui.editor = function (title, questions, isEdit) {
           '<input class="bb-input" type="number" value="' + (q.points || 10) + '" min="1" oninput="BB.app.updateQ(' + qi + ',\'points\',parseInt(this.value)||10)" style="width:60px;padding:6px 8px;text-align:center;font-size:14px">' +
           '<button class="bb-btn" onclick="BB.app.removeQ(' + qi + ')" style="background:transparent;color:var(--danger);border:none;padding:6px">' + BB.SVG.trash + '</button>' +
         '</div></div>' +
-      '<textarea class="bb-input" placeholder="Tulis soalan..." oninput="BB.app.updateQ(' + qi + ',\'question\',this.value)" rows="2" style="margin-bottom:16px;font-weight:500;font-size:15px">' + BB.esc(q.question) + '</textarea>' +
+      '<textarea class="bb-input" placeholder="Tulis soalan..." oninput="BB.app.updateQ(' + qi + ',\'question\',this.value)" rows="2" style="margin-bottom:12px;font-weight:500;font-size:15px">' + BB.esc(q.question) + '</textarea>' +
+      '<div class="q-image-wrap">' +
+        (q.imageUrl
+          ? '<div class="q-image-preview"><img src="' + BB.esc(q.imageUrl) + '" alt="Gambar soalan">' +
+            '<button class="q-image-remove" onclick="BB.app.removeImage(' + qi + ')" title="Buang gambar">✕</button></div>'
+          : '') +
+        '<label class="q-image-btn" id="imgLabel' + qi + '">' +
+          '<input type="file" accept="image/*" onchange="BB.app.handleImageUpload(' + qi + ',this)" style="display:none">' +
+          (q.imageUrl ? '🔄 Tukar Gambar' : '🖼️ Lampir Gambar') +
+        '</label>' +
+      '</div>' +
       '<div class="options-grid">' + opts + '</div></div>';
   });
 
@@ -369,6 +385,7 @@ BB.ui.hostLive = function (roomData) {
         '<div class="question-display solo-question">' +
           '<p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px">Soalan ' + (qi + 1) + '</p>' +
           '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+          BB.ui.qImg(q) +
           '<div class="solo-options-grid">' + opts + '</div>' +
         '</div>' +
         (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:500px;margin-top:8px">' + action + '</div>' : '') +
@@ -377,6 +394,7 @@ BB.ui.hostLive = function (roomData) {
       '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
         '<div class="question-display"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Soalan ' + (qi + 1) + '</p>' +
           '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+          BB.ui.qImg(q) +
           '<div class="options-grid" style="gap:14px">' + opts + '</div></div>' +
         (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:500px">' + action + '</div>' : '') +
       '</div>'
@@ -479,6 +497,7 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
       livesBar + timerBar +
       '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
       '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
+      BB.ui.qImg(q) +
       '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
       '<div style="text-align:center">' +
         (iWon ?
@@ -496,6 +515,7 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
     livesBar + timerBar +
     '<p style="color:var(--text-dim);font-size:16px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;text-align:center">Soalan ' + (qi + 1) + '/' + questions.length + '</p>' +
     '<h2 style="font-size:clamp(22px,4vw,34px);font-weight:700;line-height:1.3;margin-bottom:20px;text-align:center">' + BB.esc(q.question) + '</h2>' +
+    BB.ui.qImg(q) +
     '<div class="flex flex-col gap-12 mb-24">' + optsDisplay + '</div>' +
     '<div style="display:flex;flex-direction:column;align-items:center;gap:16px">' +
       (amEliminated ? '<div style="font-size:48px;margin-bottom:4px">💀</div><p class="font-bungee" style="font-size:22px;color:var(--danger)">ANDA TERSINGKIR!</p><p style="color:var(--text-dim);font-size:14px">Nyawa habis. Anda hanya boleh menonton.</p>' :

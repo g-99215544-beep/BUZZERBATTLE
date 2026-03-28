@@ -569,3 +569,73 @@ textarea.bb-input { resize: vertical; }
   border-color: transparent;
   box-shadow: 0 2px 8px rgba(255,152,0,0.3);
 }
+
+/* ─── Question Image Upload ─── */
+.q-image-wrap {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.q-image-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f0f7ff;
+  color: var(--accent2);
+  border: 1px dashed var(--accent2);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.q-image-btn:hover {
+  background: #e0f0ff;
+}
+.q-image-preview {
+  position: relative;
+  display: inline-block;
+}
+.q-image-preview img {
+  max-width: 180px;
+  max-height: 120px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.q-image-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(255,62,108,0.3);
+}
+
+/* ─── Question Image in Live Game ─── */
+.q-image-live {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.q-image-live img {
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: 14px;
+  object-fit: contain;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}

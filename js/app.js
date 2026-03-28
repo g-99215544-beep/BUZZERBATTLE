@@ -287,7 +287,7 @@
 
   // Editor actions
   BB.app.addQ = function () {
-    S.editorQuestions.push({ question: "", options: ["", "", "", ""], correctIndex: 0, points: 10 });
+    S.editorQuestions.push({ question: "", options: ["", "", "", ""], correctIndex: 0, points: 10, imageUrl: "" });
     render();
     setTimeout(function () { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }, 100);
   };
@@ -302,6 +302,38 @@
   };
   BB.app.setCorrect = function (qi, oi) {
     S.editorQuestions[qi].correctIndex = oi; render();
+  };
+
+  // ─── IMAGE UPLOAD ───
+  BB.app.handleImageUpload = async function (qi, input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Gambar terlalu besar! Maks 5MB.", "error");
+      input.value = "";
+      return;
+    }
+    var label = document.getElementById("imgLabel" + qi);
+    if (label) label.textContent = "⏳ Memuat naik...";
+    try {
+      var url = await BB.fire.uploadQuestionImage(S.user.uid, S.editingId, qi, file);
+      S.editorQuestions[qi].imageUrl = url;
+      render();
+      showToast("Gambar dimuat naik!");
+    } catch (e) {
+      console.error("Upload error:", e);
+      showToast("Gagal memuat naik gambar.", "error");
+      if (label) label.textContent = "🖼️ Lampir Gambar";
+    }
+  };
+  BB.app.removeImage = async function (qi) {
+    var url = S.editorQuestions[qi].imageUrl;
+    if (url) {
+      BB.fire.deleteQuestionImage(url);
+      S.editorQuestions[qi].imageUrl = "";
+      render();
+      showToast("Gambar dibuang.");
+    }
   };
 
   BB.app.saveQuiz = async function () {
