@@ -29,6 +29,7 @@
       isPremium: false,
       premiumExpiry: 0,
       aiUsage: {},
+      trialUsed: 0,
     },
   };
 
@@ -225,11 +226,13 @@
 
   // AI Quiz Generation
   BB.app.showAiModal = function () {
-    if (!S.isPremium) {
+    var trialUsed = S.trialUsed || 0;
+    // If not premium and trial exhausted, show upgrade modal
+    if (!S.isPremium && trialUsed >= BB.TRIAL_LIMIT) {
       showModal(BB.ui.upgradeModal());
       return;
     }
-    showModal(BB.ui.aiModal(S.aiUsage));
+    showModal(BB.ui.aiModal(S.aiUsage, S.isPremium, trialUsed));
   };
   // Premium Upgrade via ToyyibPay
   BB.app.upgradePremium = async function () {
@@ -761,10 +764,11 @@
           S.quizSets = sets;
           if (S.screen === "dashboard") render();
         });
-        // Listen for premium status
-        BB.fire.listenPremium(user.uid, function (isPremium, expiry) {
+        // Listen for premium status + trial usage
+        BB.fire.listenPremium(user.uid, function (isPremium, expiry, trialUsed) {
           S.isPremium = isPremium;
           S.premiumExpiry = expiry || 0;
+          S.trialUsed = trialUsed || 0;
           if (S.screen === "dashboard") render();
         });
         // Listen for AI usage
@@ -782,6 +786,7 @@
         S.isPremium = false;
         S.premiumExpiry = 0;
         S.aiUsage = {};
+        S.trialUsed = 0;
       }
       render();
     });

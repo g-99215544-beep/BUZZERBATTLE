@@ -135,7 +135,8 @@
         var data = snap.val() || {};
         var expiry = data.premiumExpiry || 0;
         var isActive = Date.now() < expiry;
-        cb(isActive, expiry);
+        var trialUsed = data.trialUsed || 0;
+        cb(isActive, expiry, trialUsed);
       });
       return ref;
     },

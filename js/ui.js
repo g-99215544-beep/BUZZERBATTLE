@@ -148,7 +148,7 @@ BB.ui.editor = function (title, questions, isEdit) {
       qs +
       '<div style="display:flex;gap:12px;margin-bottom:20px">' +
         '<button class="bb-btn" onclick="BB.app.addQ()" style="flex:1;background:transparent;color:var(--accent2);border:2px dashed var(--accent2);font-size:15px;padding:18px 0;border-radius:16px">' + BB.SVG.plus + ' Tambah Soalan</button>' +
-        '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:' + (BB.app.state.isPremium ? 'linear-gradient(135deg,#9c27b0,#e040fb)' : 'linear-gradient(135deg,#ff9800,#ff5722)') + ';color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px ' + (BB.app.state.isPremium ? 'rgba(156,39,176,0.3)' : 'rgba(255,152,0,0.3)') + '">' + (BB.app.state.isPremium ? '🤖 Jana AI' : '👑 Jana AI') + '</button>' +
+        '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:' + (BB.app.state.isPremium ? 'linear-gradient(135deg,#9c27b0,#e040fb)' : 'linear-gradient(135deg,#ff9800,#ff5722)') + ';color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px ' + (BB.app.state.isPremium ? 'rgba(156,39,176,0.3)' : 'rgba(255,152,0,0.3)') + '">' + (BB.app.state.isPremium ? '🤖 Jana AI' : (BB.app.state.trialUsed >= BB.TRIAL_LIMIT ? '👑 Jana AI' : '🎁 Jana AI (' + Math.max(0, BB.TRIAL_LIMIT - (BB.app.state.trialUsed || 0)) + ')')) + '</button>' +
       '</div>' +
       '<button class="bb-btn" id="saveBtn" onclick="BB.app.saveQuiz()" style="font-size:17px;padding:16px 0;width:100%">💾 Simpan (' + questions.length + ' soalan)</button>' +
     '</div></div>';
@@ -572,8 +572,9 @@ BB.ui.results = function (roomData, isHost) {
 // ─── Upgrade Modal ───
 BB.ui.upgradeModal = function () {
   var isRenewal = !BB.app.state.isPremium && BB.app.state.premiumExpiry > 0;
+  var trialExhausted = (BB.app.state.trialUsed || 0) >= BB.TRIAL_LIMIT;
   var title = isRenewal ? 'Renew Premium' : 'Upgrade ke Premium';
-  var subtitle = isRenewal ? 'Langganan anda telah tamat. Renew untuk terus guna Jana AI.' : 'Jana soalan AI memerlukan langganan Premium';
+  var subtitle = isRenewal ? 'Langganan anda telah tamat. Renew untuk terus guna Jana AI.' : (trialExhausted ? 'Percubaan percuma anda telah habis (0/' + BB.TRIAL_LIMIT + ' soalan). Upgrade untuk terus guna Jana AI!' : 'Jana soalan AI memerlukan langganan Premium');
   return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +
     '<div class="modal-box" onclick="event.stopPropagation()" style="max-width:440px">' +
       '<div style="font-size:56px;margin-bottom:12px">' + (isRenewal ? '🔄' : '👑') + '</div>' +
@@ -600,13 +601,25 @@ BB.ui.upgradeModal = function () {
 };
 
 // ─── AI Generate Modal ───
-BB.ui.aiModal = function (aiUsage) {
+BB.ui.aiModal = function (aiUsage, isPremium, trialUsed) {
   var today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
-  var todayCount = (aiUsage && aiUsage.date === today) ? (aiUsage.count || 0) : 0;
-  var remaining = Math.max(0, BB.PREMIUM_DAILY_LIMIT - todayCount);
-  var usageInfo = '<div style="background:rgba(0,153,221,0.06);border:1px solid rgba(0,153,221,0.15);border-radius:10px;padding:10px 14px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">' +
-    '<span style="font-size:13px;color:var(--text-dim)">Had hari ini:</span>' +
-    '<span style="font-weight:700;font-size:14px;color:' + (remaining > 10 ? 'var(--accent2)' : remaining > 0 ? 'var(--accent3)' : 'var(--danger)') + '">' + remaining + '/' + BB.PREMIUM_DAILY_LIMIT + ' soalan tinggal</span></div>';
+  var usageInfo = '';
+  if (isPremium) {
+    var todayCount = (aiUsage && aiUsage.date === today) ? (aiUsage.count || 0) : 0;
+    var remaining = Math.max(0, BB.PREMIUM_DAILY_LIMIT - todayCount);
+    usageInfo = '<div style="background:rgba(0,153,221,0.06);border:1px solid rgba(0,153,221,0.15);border-radius:10px;padding:10px 14px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">' +
+      '<span style="font-size:13px;color:var(--text-dim)">Had hari ini:</span>' +
+      '<span style="font-weight:700;font-size:14px;color:' + (remaining > 10 ? 'var(--accent2)' : remaining > 0 ? 'var(--accent3)' : 'var(--danger)') + '">' + remaining + '/' + BB.PREMIUM_DAILY_LIMIT + ' soalan tinggal</span></div>';
+  } else {
+    var trialRemaining = Math.max(0, BB.TRIAL_LIMIT - (trialUsed || 0));
+    usageInfo = '<div style="background:rgba(255,152,0,0.06);border:1px solid rgba(255,152,0,0.2);border-radius:10px;padding:10px 14px;margin-bottom:20px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+        '<span style="font-size:13px;color:var(--text-dim)">🎁 Percubaan Percuma:</span>' +
+        '<span style="font-weight:700;font-size:14px;color:' + (trialRemaining > 10 ? 'var(--accent3)' : trialRemaining > 0 ? 'var(--accent)' : 'var(--danger)') + '">' + trialRemaining + '/' + BB.TRIAL_LIMIT + ' soalan tinggal</span></div>' +
+      '<div style="background:#e0e4ea;border-radius:6px;height:6px;overflow:hidden"><div style="background:linear-gradient(90deg,#ff9800,#ff5722);height:100%;width:' + Math.round(((trialUsed || 0) / BB.TRIAL_LIMIT) * 100) + '%;border-radius:6px;transition:width 0.3s"></div></div>' +
+      (trialRemaining <= 10 ? '<p style="font-size:11px;color:var(--accent);margin-top:6px;text-align:center">⚡ Upgrade ke Premium untuk 60 soalan/hari tanpa had!</p>' : '') +
+    '</div>';
+  }
   var labelStyle = 'color:var(--text-dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px';
   var selectStyle = 'font-size:15px;padding:10px 14px';
   return '<div class="modal-overlay" onclick="BB.app.closeModal()">' +

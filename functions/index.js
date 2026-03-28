@@ -64,12 +64,17 @@ exports.generateQuiz = onRequest(
     const userSnap = await userRef.once("value");
     const userData = userSnap.val() || {};
 
-    if (!isPremiumActive(userData)) {
-      res.status(403).json({ error: "Langganan Premium anda telah tamat. Sila renew (RM15/bulan) untuk guna Jana AI.", premiumRequired: true });
+    const premium = isPremiumActive(userData);
+    const trialUsed = userData.trialUsed || 0;
+    const TRIAL_LIMIT = 30;
+
+    // ─── Check: must be premium OR have trial remaining ───
+    if (!premium && trialUsed >= TRIAL_LIMIT) {
+      res.status(403).json({ error: "Percubaan percuma anda telah habis (0/" + TRIAL_LIMIT + "). Sila upgrade ke Premium (RM15/bulan) untuk terus guna Jana AI.", premiumRequired: true });
       return;
     }
 
-    // ─── Check Daily Limit (60 questions/day) ───
+    // ─── Check Daily Limit (premium: 60/day) or Trial remaining ───
     const today = getTodayMY();
     const usageRef = admin.database().ref("buzzerBattle/users/" + uid + "/aiUsage");
     const usageSnap = await usageRef.once("value");
@@ -79,10 +84,20 @@ exports.generateQuiz = onRequest(
     const { topic, numberOfQuestions, language, year, level } = req.body;
     const numQ = Math.min(Math.max(parseInt(numberOfQuestions) || 5, 1), 20);
 
-    if (todayCount + numQ > 60) {
-      const remaining = Math.max(0, 60 - todayCount);
-      res.status(429).json({ error: "Had harian dicapai. Anda boleh jana " + remaining + " soalan lagi hari ini (had: 60 soalan/hari).", dailyLimit: true, remaining: remaining });
-      return;
+    if (premium) {
+      // Premium: daily limit 60
+      if (todayCount + numQ > 60) {
+        const remaining = Math.max(0, 60 - todayCount);
+        res.status(429).json({ error: "Had harian dicapai. Anda boleh jana " + remaining + " soalan lagi hari ini (had: 60 soalan/hari).", dailyLimit: true, remaining: remaining });
+        return;
+      }
+    } else {
+      // Trial: total limit 30
+      if (trialUsed + numQ > TRIAL_LIMIT) {
+        const remaining = Math.max(0, TRIAL_LIMIT - trialUsed);
+        res.status(429).json({ error: "Baki percubaan tidak mencukupi. Tinggal " + remaining + " soalan. Upgrade ke Premium untuk had 60 soalan/hari.", premiumRequired: true, remaining: remaining });
+        return;
+      }
     }
 
     if (!topic || typeof topic !== "string" || topic.trim().length < 2) {
@@ -157,11 +172,15 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
         };
       });
 
-      // ─── Update daily usage count ───
+      // ─── Update usage counts ───
       await usageRef.set({
         date: today,
         count: todayCount + sanitized.length,
       });
+      // Update trial count for non-premium users
+      if (!premium) {
+        await userRef.child("trialUsed").set(trialUsed + sanitized.length);
+      }
 
       res.status(200).json({ questions: sanitized });
     } catch (error) {
