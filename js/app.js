@@ -403,7 +403,9 @@
         maxPlayers: 3,
         timerSeconds: 30,
         questions: qs.questions.map(function (q) {
-          return { question: q.question, options: q.options, correctIndex: q.correctIndex, points: q.points || 10 };
+          var qData = { question: q.question, options: q.options, correctIndex: q.correctIndex, points: q.points || 10 };
+          if (q.imageUrl) qData.imageUrl = q.imageUrl;
+          return qData;
         }),
       });
       listenRoom(code);

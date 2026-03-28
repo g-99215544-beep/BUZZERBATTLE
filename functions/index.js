@@ -6,7 +6,6 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
-const pixabayApiKey = defineSecret("PIXABAY_API_KEY");
 const toyyibpaySecret = defineSecret("TOYYIBPAY_SECRET");
 const toyyibpayCategoryCode = defineSecret("TOYYIBPAY_CATEGORY_CODE");
 const toyyibpayCallbackUrl = defineSecret("TOYYIBPAY_CALLBACK_URL");
@@ -36,12 +35,12 @@ async function verifyAuth(req) {
 }
 
 // ═══════════════════════════════════════
-//  GENERATE QUIZ (Premium Only + Daily Limit)
+//  GENERATE QUIZ (Premium/Trial + Daily Limit + Image Support)
 // ═══════════════════════════════════════
 exports.generateQuiz = onRequest(
   {
     region: "asia-southeast1",
-    secrets: [geminiApiKey, pixabayApiKey],
+    secrets: [geminiApiKey],
     timeoutSeconds: 60,
     memory: "256MiB",
     cors: true,
@@ -119,12 +118,15 @@ exports.generateQuiz = onRequest(
 
     const imageInstructions = withImages ? `
 - IMPORTANT: Each question MUST be an image-based question (e.g., "Apakah nama haiwan ini?", "Apakah bentuk ini?", "Siapakah tokoh dalam gambar ini?")
-- Each question MUST include an "imageKeyword" field — a SHORT English search term (1-3 words) to find the correct image on Pixabay (e.g., "tiger", "triangle shape", "Mount Kinabalu")
-- The imageKeyword must accurately represent the CORRECT ANSWER so the image matches the question
-- Make questions that work well with images: identify animals, plants, shapes, landmarks, flags, instruments, etc.` : '';
+- Each question MUST include an "imageUrl" field — a REAL, working, direct URL to an image from the internet (e.g., from Wikipedia Commons, Wikimedia, or other reliable public sources)
+- The imageUrl MUST be a direct link to an image file (ending in .jpg, .png, .svg, .webp or a direct image URL)
+- The image MUST accurately represent the CORRECT ANSWER of the question
+- Make questions that work well with images: identify animals, plants, shapes, landmarks, flags, instruments, food, etc.
+- Use well-known, reliable image sources like Wikipedia/Wikimedia Commons (upload.wikimedia.org)
+- DO NOT use placeholder URLs or made-up URLs. Only use real, publicly accessible image URLs.` : '';
 
-    const imageFormat = withImages ? `
-    "imageKeyword": "english search keyword"` : '';
+    const imageFormat = withImages ? `,
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/..."` : '';
 
     const prompt = `Generate a quiz about "${topic.trim()}" with exactly ${numQ} multiple choice questions.
 
@@ -180,31 +182,11 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
           correctIndex: Math.min(Math.max(parseInt(q.correctIndex) || 0, 0), 3),
           points: parseInt(q.points) || 10,
         };
-        if (withImages && q.imageKeyword) {
-          sq.imageKeyword = String(q.imageKeyword);
+        if (withImages && q.imageUrl && typeof q.imageUrl === "string" && q.imageUrl.startsWith("http")) {
+          sq.imageUrl = q.imageUrl;
         }
         return sq;
       });
-
-      // ─── Search Pixabay for images if withImages ───
-      if (withImages && pixabayApiKey.value()) {
-        await Promise.all(sanitized.map(async (q) => {
-          if (!q.imageKeyword) return;
-          try {
-            const searchUrl = `https://pixabay.com/api/?key=${encodeURIComponent(pixabayApiKey.value())}&q=${encodeURIComponent(q.imageKeyword)}&image_type=photo&per_page=5&safesearch=true`;
-            const imgResp = await fetch(searchUrl);
-            const imgData = await imgResp.json();
-            if (imgData.hits && imgData.hits.length > 0) {
-              // Pick a random image from top 5 results for variety
-              const pick = imgData.hits[Math.floor(Math.random() * Math.min(imgData.hits.length, 5))];
-              q.imageUrl = pick.webformatURL;
-            }
-          } catch (imgErr) {
-            console.error("Pixabay search failed for:", q.imageKeyword, imgErr);
-          }
-          delete q.imageKeyword;
-        }));
-      }
 
       // ─── Update usage counts ───
       await usageRef.set({
