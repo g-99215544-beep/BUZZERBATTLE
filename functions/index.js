@@ -222,6 +222,16 @@ exports.regenerateImage = onRequest(
     cors: true,
   },
   async (req, res) => {
+    // Manual CORS headers as fallback
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
       return;
@@ -231,6 +241,43 @@ exports.regenerateImage = onRequest(
     if (!decoded) {
       res.status(401).json({ error: "Sila login terlebih dahulu." });
       return;
+    }
+
+    const uid = decoded.uid;
+
+    // ─── Check Premium / Trial ───
+    const userRef = admin.database().ref("buzzerBattle/users/" + uid);
+    const userSnap = await userRef.once("value");
+    const userData = userSnap.val() || {};
+
+    const premium = isPremiumActive(userData);
+    const trialUsed = userData.trialUsed || 0;
+    const TRIAL_LIMIT = 30;
+
+    if (!premium && trialUsed >= TRIAL_LIMIT) {
+      res.status(403).json({ error: "Percubaan percuma anda telah habis (0/" + TRIAL_LIMIT + "). Sila upgrade ke Premium untuk terus guna Jana Gambar AI.", premiumRequired: true });
+      return;
+    }
+
+    // ─── Check Daily Limit ───
+    const today = getTodayMY();
+    const usageRef = admin.database().ref("buzzerBattle/users/" + uid + "/aiUsage");
+    const usageSnap = await usageRef.once("value");
+    const usage = usageSnap.val() || {};
+    const todayCount = (usage.date === today) ? (usage.count || 0) : 0;
+
+    if (premium) {
+      if (todayCount + 1 > 60) {
+        const remaining = Math.max(0, 60 - todayCount);
+        res.status(429).json({ error: "Had harian dicapai. Tinggal " + remaining + " soalan lagi hari ini (had: 60/hari).", dailyLimit: true, remaining: remaining });
+        return;
+      }
+    } else {
+      if (trialUsed + 1 > TRIAL_LIMIT) {
+        const remaining = Math.max(0, TRIAL_LIMIT - trialUsed);
+        res.status(429).json({ error: "Baki percubaan tidak mencukupi. Tinggal " + remaining + ". Upgrade ke Premium.", premiumRequired: true, remaining: remaining });
+        return;
+      }
     }
 
     const { question, correctAnswer, language } = req.body || {};
@@ -270,6 +317,12 @@ Return ONLY valid JSON, no markdown, no explanation:
 
       const parsed = JSON.parse(jsonStr);
       if (parsed.imageUrl && typeof parsed.imageUrl === "string" && parsed.imageUrl.startsWith("http")) {
+        // ─── Deduct 1 usage ───
+        await usageRef.set({ date: today, count: todayCount + 1 });
+        if (!premium) {
+          await userRef.child("trialUsed").set(trialUsed + 1);
+        }
+
         res.status(200).json({ imageUrl: parsed.imageUrl });
       } else {
         res.status(500).json({ error: "Gagal mendapatkan URL gambar yang sah." });

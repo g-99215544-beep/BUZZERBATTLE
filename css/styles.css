@@ -319,7 +319,8 @@ textarea.bb-input { resize: vertical; }
 }
 .screen-live-host.solo-screen {
   height: 100vh; max-height: 100vh; overflow: hidden;
-  padding: 10px 16px;
+  height: 100dvh; max-height: 100dvh;
+  padding: 6px 10px;
 }
 .solo-header-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -356,33 +357,53 @@ textarea.bb-input { resize: vertical; }
   animation: slideUp 0.4s ease;
 }
 .question-display.solo-question {
-  padding: 24px 28px; margin-bottom: 0;
+  padding: 12px 16px; margin-bottom: 0;
   animation: none;
-  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+}
+.solo-content-row {
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  flex: 1; min-height: 0;
+}
+.solo-image-col {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  max-width: 40%;
+}
+.solo-image-col .q-image-live { margin-bottom: 0; }
+.solo-image-col .q-image-live img {
+  max-height: 28vh; max-width: 100%; border-radius: 10px;
+}
+.solo-text-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; min-width: 0;
+}
+.solo-text-col .question-text {
+  font-size: clamp(16px, 3.5vw, 30px); margin-bottom: 0; line-height: 1.25;
 }
 .solo-question .question-text {
-  font-size: clamp(22px, 4.5vw, 38px); margin-bottom: 0;
+  font-size: clamp(18px, 4vw, 34px); margin-bottom: 0;
   flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
 }
 .solo-options-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
   width: 100%; max-width: 600px; margin: 0 auto;
+  flex-shrink: 0;
 }
 .solo-options-grid .answer-option-btn {
-  padding: 10px 14px; font-size: clamp(14px, 2vw, 18px);
-  border-radius: 12px;
+  padding: 8px 10px; font-size: clamp(13px, 2vw, 17px);
+  border-radius: 10px;
 }
 .solo-options-grid .answer-option-btn .font-bungee {
-  font-size: 16px !important; width: 28px !important;
+  font-size: 14px !important; width: 24px !important;
 }
 .solo-options-grid .option-display {
-  padding: 10px 14px;
+  padding: 8px 10px;
 }
 .solo-options-grid .option-label {
-  font-size: 16px; width: 28px;
+  font-size: 14px; width: 24px;
 }
 .solo-options-grid .option-text {
-  font-size: clamp(14px, 2vw, 18px);
+  font-size: clamp(13px, 2vw, 17px);
 }
 .question-text {
   font-size: clamp(26px, 5vw, 42px); font-weight: 700; line-height: 1.3; margin-bottom: 28px;

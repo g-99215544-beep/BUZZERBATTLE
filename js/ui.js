@@ -390,14 +390,23 @@ BB.ui.hostLive = function (roomData) {
     ) +
     timerBar +
     (isSingle ?
-      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;max-width:900px;margin:0 auto;width:100%;min-height:0">' +
+      '<div style="flex:1;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;overflow:hidden">' +
         '<div class="question-display solo-question">' +
-          '<p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px">Soalan ' + (qi + 1) + '</p>' +
-          '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
-          BB.ui.qImg(q) +
+          (q.imageUrl ?
+            '<div class="solo-content-row">' +
+              '<div class="solo-image-col">' + BB.ui.qImg(q) + '</div>' +
+              '<div class="solo-text-col">' +
+                '<p style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px">Soalan ' + (qi + 1) + '</p>' +
+                '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+              '</div>' +
+            '</div>'
+          :
+            '<p style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px">Soalan ' + (qi + 1) + '</p>' +
+            '<h2 class="question-text">' + BB.esc(q.question) + '</h2>'
+          ) +
           '<div class="solo-options-grid">' + opts + '</div>' +
         '</div>' +
-        (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:500px;margin-top:8px">' + action + '</div>' : '') +
+        (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:500px;margin:4px auto 0">' + action + '</div>' : '') +
       '</div>'
     :
       '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:900px;margin:0 auto;width:100%">' +
