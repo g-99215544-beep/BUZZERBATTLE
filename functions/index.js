@@ -117,13 +117,17 @@ exports.generateQuiz = onRequest(
     const diffDesc = difficultyMap[diffLevel] || difficultyMap["Sederhana"];
 
     const imageInstructions = withImages ? `
-- IMPORTANT: Each question MUST be an image-based question (e.g., "Apakah nama haiwan ini?", "Apakah bentuk ini?", "Siapakah tokoh dalam gambar ini?")
-- Each question MUST include an "imageUrl" field — a REAL, working, direct URL to an image from the internet (e.g., from Wikipedia Commons, Wikimedia, or other reliable public sources)
-- The imageUrl MUST be a direct link to an image file (ending in .jpg, .png, .svg, .webp or a direct image URL)
+
+CRITICAL IMAGE REQUIREMENTS (EVERY SINGLE QUESTION MUST FOLLOW THESE):
+- EVERY question MUST be an image-based question (e.g., "Apakah nama haiwan ini?", "Apakah bentuk ini?", "Siapakah tokoh dalam gambar ini?")
+- EVERY question MUST include an "imageUrl" field — a REAL, working, direct URL to an image from the internet
+- ALL ${numQ} questions MUST have an imageUrl. NOT just one or two — ALL of them. If any question is missing imageUrl, the response is INVALID.
+- The imageUrl MUST be a direct link to an image file (ending in .jpg, .jpeg, .png, .svg, .webp or a direct image URL)
 - The image MUST accurately represent the CORRECT ANSWER of the question
-- Make questions that work well with images: identify animals, plants, shapes, landmarks, flags, instruments, food, etc.
-- Use well-known, reliable image sources like Wikipedia/Wikimedia Commons (upload.wikimedia.org)
-- DO NOT use placeholder URLs or made-up URLs. Only use real, publicly accessible image URLs.` : '';
+- Make questions that work well with images: identify animals, plants, shapes, landmarks, flags, instruments, food, historical figures, etc.
+- Use well-known, reliable image sources — ONLY use Wikipedia/Wikimedia Commons URLs (upload.wikimedia.org/wikipedia/commons/...)
+- DO NOT use placeholder URLs or made-up URLs. Only use real, publicly accessible image URLs from Wikimedia Commons.
+- Double-check: EVERY question object in the JSON array MUST have the "imageUrl" field with a valid URL. No exceptions.` : '';
 
     const imageFormat = withImages ? `,
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/..."` : '';
@@ -202,6 +206,77 @@ correctIndex is 0-based (0=A, 1=B, 2=C, 3=D).`;
     } catch (error) {
       console.error("Gemini API error:", error);
       res.status(500).json({ error: "Gagal menjana soalan. Cuba lagi." });
+    }
+  }
+);
+
+// ═══════════════════════════════════════
+//  REGENERATE IMAGE URL FOR A QUESTION
+// ═══════════════════════════════════════
+exports.regenerateImage = onRequest(
+  {
+    region: "asia-southeast1",
+    secrets: [geminiApiKey],
+    timeoutSeconds: 30,
+    memory: "256MiB",
+    cors: true,
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
+      return;
+    }
+
+    const decoded = await verifyAuth(req);
+    if (!decoded) {
+      res.status(401).json({ error: "Sila login terlebih dahulu." });
+      return;
+    }
+
+    const { question, correctAnswer, language } = req.body || {};
+    if (!question || !correctAnswer) {
+      res.status(400).json({ error: "Soalan dan jawapan diperlukan." });
+      return;
+    }
+
+    const lang = language || "Malay";
+
+    const prompt = `I need a real, working image URL from Wikimedia Commons for the following quiz question.
+
+Question: "${question}"
+Correct Answer: "${correctAnswer}"
+Language: ${lang}
+
+REQUIREMENTS:
+- Return ONLY a JSON object with a single "imageUrl" field
+- The imageUrl MUST be a REAL, working, direct URL to an image from Wikimedia Commons (upload.wikimedia.org/wikipedia/commons/...)
+- The image MUST visually represent the correct answer "${correctAnswer}"
+- The URL MUST end with an image extension (.jpg, .jpeg, .png, .svg, .webp)
+- DO NOT use placeholder or made-up URLs
+- Try to use a well-known, commonly accessed image
+
+Return ONLY valid JSON, no markdown, no explanation:
+{"imageUrl": "https://upload.wikimedia.org/wikipedia/commons/..."}`;
+
+    try {
+      const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+
+      let jsonStr = text;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) jsonStr = jsonMatch[0];
+
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.imageUrl && typeof parsed.imageUrl === "string" && parsed.imageUrl.startsWith("http")) {
+        res.status(200).json({ imageUrl: parsed.imageUrl });
+      } else {
+        res.status(500).json({ error: "Gagal mendapatkan URL gambar yang sah." });
+      }
+    } catch (error) {
+      console.error("Regenerate image error:", error);
+      res.status(500).json({ error: "Gagal menjana gambar. Cuba lagi." });
     }
   }
 );

@@ -206,5 +206,27 @@
       var data = await resp.json();
       return data.questions;
     },
+
+    // ─── REGENERATE IMAGE URL FOR A QUESTION ───
+    regenerateImage: async function (question, correctAnswer, language) {
+      var user = firebase.auth().currentUser;
+      if (!user) throw new Error("Not authenticated");
+      var token = await user.getIdToken();
+      var url = BB.CLOUD_FUNCTIONS_URL + "/regenerateImage";
+      var resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token,
+        },
+        body: JSON.stringify({ question: question, correctAnswer: correctAnswer, language: language || "Malay" }),
+      });
+      if (!resp.ok) {
+        var err = await resp.json().catch(function () { return {}; });
+        throw new Error(err.error || "Gagal menjana gambar");
+      }
+      var data = await resp.json();
+      return data.imageUrl;
+    },
   };
 })();
