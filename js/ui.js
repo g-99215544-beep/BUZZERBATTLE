@@ -136,6 +136,7 @@ BB.ui.editor = function (title, questions, isEdit) {
             '📁 Fail' +
           '</label>' +
           '<button class="q-image-btn" onclick="BB.app.showUrlInput(' + qi + ')" type="button">🔗 URL</button>' +
+          '<button class="q-image-btn" id="regenBtn' + qi + '" onclick="BB.app.regenerateImage(' + qi + ')" type="button" style="background:rgba(156,39,176,0.08);color:#9c27b0;border-color:rgba(156,39,176,0.3)" title="Jana semula gambar dari AI">🔄 Jana Gambar AI</button>' +
         '</div>' +
         '<div class="q-url-input" id="urlWrap' + qi + '" style="display:none">' +
           '<input class="bb-input" id="urlInput' + qi + '" placeholder="https://contoh.com/gambar.jpg" style="flex:1;padding:8px 12px;font-size:13px">' +
@@ -153,6 +154,7 @@ BB.ui.editor = function (title, questions, isEdit) {
       '<div style="margin-bottom:28px"><label style="color:var(--text-dim);font-size:13px;font-weight:600;display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Tajuk Quiz</label>' +
         '<input class="bb-input" id="quizTitle" placeholder="cth: Matematik Tahun 4" value="' + BB.esc(title) + '" oninput="BB.app.state.editorTitle=this.value" style="font-size:18px;font-weight:600"></div>' +
       qs +
+      (questions.some(function(q) { return q.imageUrl; }) ? '<div style="margin-bottom:12px"><button class="bb-btn" id="regenAllBtn" onclick="BB.app.regenerateAllImages()" style="width:100%;background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;font-size:14px;padding:14px 0;border-radius:12px">🔄 Jana Semula Semua Gambar AI</button></div>' : '') +
       '<div style="display:flex;gap:12px;margin-bottom:20px">' +
         '<button class="bb-btn" onclick="BB.app.addQ()" style="flex:1;background:transparent;color:var(--accent2);border:2px dashed var(--accent2);font-size:15px;padding:18px 0;border-radius:16px">' + BB.SVG.plus + ' Tambah Soalan</button>' +
         '<button class="bb-btn" onclick="BB.app.showAiModal()" style="flex:1;background:' + (BB.app.state.isPremium ? 'linear-gradient(135deg,#9c27b0,#e040fb)' : 'linear-gradient(135deg,#ff9800,#ff5722)') + ';color:#fff;font-size:15px;padding:18px 0;border-radius:16px;box-shadow:0 0 20px ' + (BB.app.state.isPremium ? 'rgba(156,39,176,0.3)' : 'rgba(255,152,0,0.3)') + '">' + (BB.app.state.isPremium ? '🤖 Jana AI' : (BB.app.state.trialUsed >= BB.TRIAL_LIMIT ? '👑 Jana AI' : '🎁 Jana AI (' + Math.max(0, BB.TRIAL_LIMIT - (BB.app.state.trialUsed || 0)) + ')')) + '</button>' +
@@ -678,13 +680,21 @@ BB.ui.aiModal = function (aiUsage, isPremium, trialUsed) {
         // Topic / additional prompt
         '<label style="' + labelStyle + '">Topik Tambahan / Prompt (pilihan)</label>' +
         '<input class="bb-input" id="aiTopic" placeholder="cth: Pecahan, Tambah & Tolak" style="margin-bottom:16px;font-size:15px">' +
-        // Image question toggle
-        '<div style="margin-bottom:16px;background:rgba(156,39,176,0.06);border:1px solid rgba(156,39,176,0.15);border-radius:10px;padding:12px 14px">' +
-          '<label style="display:flex;align-items:center;gap:10px;cursor:pointer">' +
-            '<input type="checkbox" id="aiWithImages" style="width:18px;height:18px;accent-color:#9c27b0">' +
-            '<div><span style="font-weight:700;font-size:14px">🖼️ Soalan Bergambar</span>' +
-            '<p style="font-size:12px;color:var(--text-dim);margin-top:2px">AI akan cari gambar dari internet dan lampir pada soalan (cth: Apakah haiwan ini?)</p></div>' +
-          '</label></div>' +
+        // Image question toggle - Two tabs
+        '<div style="margin-bottom:16px">' +
+          '<div style="display:flex;border-radius:10px;overflow:hidden;border:2px solid var(--border);margin-bottom:10px">' +
+            '<button type="button" id="aiTabNormal" onclick="BB.app.setAiTab(\'normal\')" class="bb-btn" style="flex:1;border-radius:0;border:none;padding:12px 0;font-size:14px;font-weight:700;background:#f0f2f5;color:var(--text)">📝 Janaan Biasa</button>' +
+            '<button type="button" id="aiTabImage" onclick="BB.app.setAiTab(\'image\')" class="bb-btn" style="flex:1;border-radius:0;border:none;padding:12px 0;font-size:14px;font-weight:700;background:transparent;color:var(--text-dim)">🖼️ Janaan Bergambar</button>' +
+          '</div>' +
+          '<input type="hidden" id="aiWithImages" value="false">' +
+          '<div id="aiImageOptions" style="display:none;background:rgba(156,39,176,0.06);border:1px solid rgba(156,39,176,0.15);border-radius:10px;padding:12px 14px">' +
+            '<label style="display:flex;align-items:center;gap:10px;cursor:pointer">' +
+              '<input type="checkbox" id="aiAllImages" checked style="width:18px;height:18px;accent-color:#9c27b0">' +
+              '<div><span style="font-weight:700;font-size:14px">✅ Semua soalan ada gambar</span>' +
+              '<p style="font-size:12px;color:var(--text-dim);margin-top:2px">AI akan cari gambar URL dari internet untuk setiap soalan (cth: Apakah haiwan ini?)</p></div>' +
+            '</label>' +
+          '</div>' +
+        '</div>' +
         // Number & Language row
         '<div style="display:flex;gap:12px;margin-bottom:20px">' +
           '<div style="flex:1"><label style="' + labelStyle + '">Bilangan Soalan</label>' +

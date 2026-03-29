@@ -265,7 +265,7 @@
     var num = numEl ? parseInt(numEl.value) || 5 : 5;
     var lang = langEl ? langEl.value : "Malay";
     var imgEl = document.getElementById("aiWithImages");
-    var withImages = imgEl ? imgEl.checked : false;
+    var withImages = imgEl ? imgEl.value === "true" : false;
 
     if (!subject && !topic) { showToast("Sila pilih subjek atau masukkan topik.", "error"); return; }
 
@@ -352,6 +352,66 @@
       render();
       showToast("Gambar dibuang.");
     }
+  };
+
+  // ─── AI TAB TOGGLE ───
+  BB.app.setAiTab = function (tab) {
+    var normalBtn = document.getElementById("aiTabNormal");
+    var imageBtn = document.getElementById("aiTabImage");
+    var imgOptions = document.getElementById("aiImageOptions");
+    var imgVal = document.getElementById("aiWithImages");
+    if (tab === "image") {
+      if (normalBtn) { normalBtn.style.background = "transparent"; normalBtn.style.color = "var(--text-dim)"; }
+      if (imageBtn) { imageBtn.style.background = "linear-gradient(135deg,#9c27b0,#e040fb)"; imageBtn.style.color = "#fff"; }
+      if (imgOptions) imgOptions.style.display = "block";
+      if (imgVal) imgVal.value = "true";
+    } else {
+      if (normalBtn) { normalBtn.style.background = "#f0f2f5"; normalBtn.style.color = "var(--text)"; }
+      if (imageBtn) { imageBtn.style.background = "transparent"; imageBtn.style.color = "var(--text-dim)"; }
+      if (imgOptions) imgOptions.style.display = "none";
+      if (imgVal) imgVal.value = "false";
+    }
+  };
+
+  // ─── REGENERATE IMAGE FOR SINGLE QUESTION ───
+  BB.app.regenerateImage = async function (qi) {
+    var q = S.editorQuestions[qi];
+    if (!q || !q.question) { showToast("Soalan kosong. Tulis soalan dahulu.", "error"); return; }
+    var correctAnswer = q.options[q.correctIndex] || "";
+    if (!correctAnswer) { showToast("Sila isi jawapan yang betul dahulu.", "error"); return; }
+    var btn = document.getElementById("regenBtn" + qi);
+    if (btn) { btn.disabled = true; btn.innerHTML = "⏳ Mencari..."; }
+    try {
+      var url = await BB.fire.regenerateImage(q.question, correctAnswer);
+      S.editorQuestions[qi].imageUrl = url;
+      render();
+      showToast("Gambar berjaya dijana!");
+    } catch (e) {
+      console.error("Regenerate image error:", e);
+      showToast("Gagal menjana gambar: " + (e.message || "Cuba lagi."), "error");
+      if (btn) { btn.disabled = false; btn.innerHTML = "🔄 Jana Gambar AI"; }
+    }
+  };
+
+  // ─── REGENERATE ALL IMAGES ───
+  BB.app.regenerateAllImages = async function () {
+    var allBtn = document.getElementById("regenAllBtn");
+    if (allBtn) { allBtn.disabled = true; allBtn.innerHTML = '<span class="loading-spinner"></span> Menjana semua gambar...'; }
+    var success = 0; var fail = 0;
+    for (var i = 0; i < S.editorQuestions.length; i++) {
+      var q = S.editorQuestions[i];
+      if (!q.question || !q.options[q.correctIndex]) { fail++; continue; }
+      try {
+        var url = await BB.fire.regenerateImage(q.question, q.options[q.correctIndex]);
+        S.editorQuestions[i].imageUrl = url;
+        success++;
+      } catch (e) {
+        console.error("Regenerate image error for q" + i + ":", e);
+        fail++;
+      }
+    }
+    render();
+    showToast(success + " gambar berjaya dijana" + (fail > 0 ? ", " + fail + " gagal" : "") + "!");
   };
 
   BB.app.saveQuiz = async function () {
