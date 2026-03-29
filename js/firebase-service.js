@@ -207,8 +207,8 @@
       return data.questions;
     },
 
-    // ─── REGENERATE IMAGE URL FOR A QUESTION ───
-    regenerateImage: async function (question, correctAnswer, language) {
+    // ─── SEARCH IMAGE URL VIA AI ───
+    regenerateImage: async function (prompt) {
       var user = firebase.auth().currentUser;
       if (!user) throw new Error("Not authenticated");
       var token = await user.getIdToken();
@@ -219,7 +219,7 @@
           "Content-Type": "application/json",
           "Authorization": "Bearer " + token,
         },
-        body: JSON.stringify({ question: question, correctAnswer: correctAnswer, language: language || "Malay" }),
+        body: JSON.stringify({ prompt: prompt }),
       });
       if (!resp.ok) {
         var err = await resp.json().catch(function () { return {}; });

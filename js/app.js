@@ -264,8 +264,6 @@
     var topic = topicEl ? topicEl.value.trim() : "";
     var num = numEl ? parseInt(numEl.value) || 5 : 5;
     var lang = langEl ? langEl.value : "Malay";
-    var imgEl = document.getElementById("aiWithImages");
-    var withImages = imgEl ? imgEl.value === "true" : false;
 
     if (!subject && !topic) { showToast("Sila pilih subjek atau masukkan topik.", "error"); return; }
 
@@ -274,9 +272,9 @@
     if (topic) fullTopic += (fullTopic ? " - " : "") + topic;
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="loading-spinner"></span> ' + (withImages ? 'Menjana soalan + cari gambar...' : 'Menjana soalan...');
+    btn.innerHTML = '<span class="loading-spinner"></span> Menjana soalan...';
     try {
-      var questions = await BB.fire.generateQuiz(fullTopic, num, lang, year, level, withImages);
+      var questions = await BB.fire.generateQuiz(fullTopic, num, lang, year, level, false);
       S.editorTitle = S.editorTitle || fullTopic;
       S.editorQuestions = S.editorQuestions.concat(questions);
       BB.app.closeModal();
@@ -354,64 +352,35 @@
     }
   };
 
-  // ─── AI TAB TOGGLE ───
-  BB.app.setAiTab = function (tab) {
-    var normalBtn = document.getElementById("aiTabNormal");
-    var imageBtn = document.getElementById("aiTabImage");
-    var imgOptions = document.getElementById("aiImageOptions");
-    var imgVal = document.getElementById("aiWithImages");
-    if (tab === "image") {
-      if (normalBtn) { normalBtn.style.background = "transparent"; normalBtn.style.color = "var(--text-dim)"; }
-      if (imageBtn) { imageBtn.style.background = "linear-gradient(135deg,#9c27b0,#e040fb)"; imageBtn.style.color = "#fff"; }
-      if (imgOptions) imgOptions.style.display = "block";
-      if (imgVal) imgVal.value = "true";
-    } else {
-      if (normalBtn) { normalBtn.style.background = "#f0f2f5"; normalBtn.style.color = "var(--text)"; }
-      if (imageBtn) { imageBtn.style.background = "transparent"; imageBtn.style.color = "var(--text-dim)"; }
-      if (imgOptions) imgOptions.style.display = "none";
-      if (imgVal) imgVal.value = "false";
+  // ─── SHOW AI IMAGE PROMPT INPUT ───
+  BB.app.showAiImagePrompt = function (qi) {
+    var wrap = document.getElementById("aiImgWrap" + qi);
+    if (wrap) {
+      wrap.style.display = wrap.style.display === "none" ? "flex" : "none";
+      if (wrap.style.display === "flex") {
+        var input = document.getElementById("aiImgPrompt" + qi);
+        if (input) input.focus();
+      }
     }
   };
 
-  // ─── REGENERATE IMAGE FOR SINGLE QUESTION ───
+  // ─── REGENERATE IMAGE FOR SINGLE QUESTION (with custom prompt) ───
   BB.app.regenerateImage = async function (qi) {
-    var q = S.editorQuestions[qi];
-    if (!q || !q.question) { showToast("Soalan kosong. Tulis soalan dahulu.", "error"); return; }
-    var correctAnswer = q.options[q.correctIndex] || "";
-    if (!correctAnswer) { showToast("Sila isi jawapan yang betul dahulu.", "error"); return; }
-    var btn = document.getElementById("regenBtn" + qi);
-    if (btn) { btn.disabled = true; btn.innerHTML = "⏳ Mencari..."; }
+    var promptInput = document.getElementById("aiImgPrompt" + qi);
+    var prompt = promptInput ? promptInput.value.trim() : "";
+    if (!prompt) { showToast("Sila masukkan apa gambar yang anda mahu. cth: gambar gajah", "error"); return; }
+    var searchBtn = document.querySelector("#aiImgWrap" + qi + " .bb-btn");
+    if (searchBtn) { searchBtn.disabled = true; searchBtn.innerHTML = "⏳ Mencari..."; }
     try {
-      var url = await BB.fire.regenerateImage(q.question, correctAnswer);
+      var url = await BB.fire.regenerateImage(prompt);
       S.editorQuestions[qi].imageUrl = url;
       render();
       showToast("Gambar berjaya dijana!");
     } catch (e) {
       console.error("Regenerate image error:", e);
       showToast("Gagal menjana gambar: " + (e.message || "Cuba lagi."), "error");
-      if (btn) { btn.disabled = false; btn.innerHTML = "🔄 Jana Gambar AI"; }
+      if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = "🔍 Cari"; }
     }
-  };
-
-  // ─── REGENERATE ALL IMAGES ───
-  BB.app.regenerateAllImages = async function () {
-    var allBtn = document.getElementById("regenAllBtn");
-    if (allBtn) { allBtn.disabled = true; allBtn.innerHTML = '<span class="loading-spinner"></span> Menjana semua gambar...'; }
-    var success = 0; var fail = 0;
-    for (var i = 0; i < S.editorQuestions.length; i++) {
-      var q = S.editorQuestions[i];
-      if (!q.question || !q.options[q.correctIndex]) { fail++; continue; }
-      try {
-        var url = await BB.fire.regenerateImage(q.question, q.options[q.correctIndex]);
-        S.editorQuestions[i].imageUrl = url;
-        success++;
-      } catch (e) {
-        console.error("Regenerate image error for q" + i + ":", e);
-        fail++;
-      }
-    }
-    render();
-    showToast(success + " gambar berjaya dijana" + (fail > 0 ? ", " + fail + " gagal" : "") + "!");
   };
 
   BB.app.saveQuiz = async function () {

@@ -280,24 +280,20 @@ exports.regenerateImage = onRequest(
       }
     }
 
-    const { question, correctAnswer, language } = req.body || {};
-    if (!question || !correctAnswer) {
-      res.status(400).json({ error: "Soalan dan jawapan diperlukan." });
+    const { prompt: userPrompt } = req.body || {};
+    if (!userPrompt || typeof userPrompt !== "string" || userPrompt.trim().length < 2) {
+      res.status(400).json({ error: "Sila masukkan keterangan gambar." });
       return;
     }
 
-    const lang = language || "Malay";
+    const prompt = `I need a real, working image URL from Wikimedia Commons that matches this description:
 
-    const prompt = `I need a real, working image URL from Wikimedia Commons for the following quiz question.
-
-Question: "${question}"
-Correct Answer: "${correctAnswer}"
-Language: ${lang}
+"${userPrompt.trim()}"
 
 REQUIREMENTS:
 - Return ONLY a JSON object with a single "imageUrl" field
 - The imageUrl MUST be a REAL, working, direct URL to an image from Wikimedia Commons (upload.wikimedia.org/wikipedia/commons/...)
-- The image MUST visually represent the correct answer "${correctAnswer}"
+- The image MUST visually match the description above
 - The URL MUST end with an image extension (.jpg, .jpeg, .png, .svg, .webp)
 - DO NOT use placeholder or made-up URLs
 - Try to use a well-known, commonly accessed image
