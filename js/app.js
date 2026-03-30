@@ -149,7 +149,7 @@
     roomListenerCode = code;
     BB.fire.listenRoom(code, function (data) {
       if (!data) { S.roomData = null; return; }
-      // Check if only timerRemaining changed (skip full re-render to avoid flicker)
+      // Check if only timer values changed (skip full re-render to avoid flicker)
       var prev = S.roomData;
       var timerOnly = prev && data &&
         prev.status === data.status &&
@@ -158,7 +158,8 @@
         prev.buzzedBy === data.buzzedBy &&
         prev.hostScore === data.hostScore &&
         prev.hostLives === data.hostLives &&
-        prev.timerRemaining !== data.timerRemaining;
+        (prev.timerRemaining !== data.timerRemaining || prev.buzzTimerRemaining !== data.buzzTimerRemaining);
+      var prevStatus = prev ? prev.status : null;
       S.roomData = data;
 
       // Force fullscreen for players when host triggers it
@@ -176,8 +177,8 @@
       } else if (["buzzer_locked", "buzzer_open", "buzzed", "answered"].indexOf(data.status) >= 0) {
         if (S.screen === "hostWaiting") S.screen = "liveHost";
         if (S.screen === "playerWaiting") S.screen = "livePlayer";
-        // Start 2-second buzz timer when someone buzzes (host only)
-        if (data.status === "buzzed" && data.buzzedBy && S.user && S.screen === "liveHost") {
+        // Start 3-second buzz timer when status CHANGES to buzzed (host only)
+        if (data.status === "buzzed" && prevStatus !== "buzzed" && data.buzzedBy && S.user && S.screen === "liveHost") {
           startBuzzTimer();
         }
         // Clear buzz timer when answered
@@ -527,35 +528,47 @@
     if (buzzTimerInterval) { clearInterval(buzzTimerInterval); buzzTimerInterval = null; }
   }
 
+  var BUZZ_SECONDS = 3;
+
   function startBuzzTimer() {
     clearBuzzTimer();
     if (!S.roomData || !S.roomCode) return;
-    var remaining = 4; // 4 half-seconds = 2 seconds (update every 500ms for smooth pie)
-    S.roomData.buzzTimerRemaining = 2;
-    BB.fire.setRoomField(S.roomCode, "buzzTimerRemaining", 2);
+    var totalTicks = BUZZ_SECONDS * 2; // ticks at 500ms intervals
+    var remaining = totalTicks;
+    S.roomData.buzzTimerRemaining = BUZZ_SECONDS;
+    BB.fire.setRoomField(S.roomCode, "buzzTimerRemaining", BUZZ_SECONDS);
     buzzTimerInterval = setInterval(async function () {
       if (!S.roomData || S.roomData.status !== "buzzed") { clearBuzzTimer(); return; }
       remaining--;
       var secs = Math.ceil(remaining / 2);
       S.roomData.buzzTimerRemaining = secs;
-      // Update pie timer DOM directly (host)
+      // Update buzz timer bar DOM directly (host)
       var buzzTimerText = document.getElementById('buzz-timer-text');
       var buzzTimerFill = document.getElementById('buzz-timer-fill');
       if (buzzTimerText && buzzTimerFill) {
-        var pct = Math.round((remaining / 4) * 100);
+        var pct = Math.round((remaining / totalTicks) * 100);
         var buzzColor = pct > 50 ? 'var(--accent3)' : 'var(--danger)';
         buzzTimerText.textContent = '⏱️ ' + secs + 's - ' + ((S.roomData.players && S.roomData.buzzedBy && S.roomData.players[S.roomData.buzzedBy]) ? S.roomData.players[S.roomData.buzzedBy].name : '');
         buzzTimerText.style.color = buzzColor;
         buzzTimerFill.style.width = pct + '%';
         buzzTimerFill.style.background = buzzColor;
       }
-      // Sync to Firebase for player pie timer
+      // Update player pie timer DOM directly
+      var pieTimer = document.getElementById('pie-timer');
+      var pieText = document.getElementById('pie-timer-text');
+      if (pieTimer && pieText) {
+        var pieDeg = Math.round((remaining / totalTicks) * 360);
+        var pieColor = remaining > totalTicks / 2 ? '#00e5ff' : '#ff3e6c';
+        pieTimer.style.setProperty('--pie-deg', pieDeg + 'deg');
+        pieTimer.style.setProperty('--pie-color', pieColor);
+        pieText.textContent = secs;
+      }
+      // Sync to Firebase for player every second
       if (remaining % 2 === 0) {
         BB.fire.setRoomField(S.roomCode, "buzzTimerRemaining", secs);
       }
       if (remaining <= 0) {
         clearBuzzTimer();
-        // Time's up - auto wrong for buzzed player
         await handleBuzzTimeout();
       }
     }, 500);
@@ -832,7 +845,7 @@
     }
     var won = await BB.fire.tryBuzz(S.roomCode, S.playerId);
     if (won) {
-      await BB.fire.updateRoom(S.roomCode, { status: "buzzed", buzzTimerRemaining: 2 });
+      await BB.fire.updateRoom(S.roomCode, { status: "buzzed", buzzTimerRemaining: BUZZ_SECONDS });
     }
   };
 

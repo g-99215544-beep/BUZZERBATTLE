@@ -307,11 +307,11 @@ BB.ui.hostLive = function (roomData) {
       '<div style="background:#e0e4ea;border-radius:8px;height:6px;overflow:hidden"><div id="timer-fill" style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
   }
 
-  // Buzz timer bar (2 seconds for host to answer)
+  // Buzz timer bar (3 seconds for host to answer)
   var buzzTimerBar = '';
   if (buzzedBy && status === "buzzed") {
-    var buzzRemaining = roomData.buzzTimerRemaining != null ? roomData.buzzTimerRemaining : 2;
-    var buzzPct = Math.round((buzzRemaining / 2) * 100);
+    var buzzRemaining = roomData.buzzTimerRemaining != null ? roomData.buzzTimerRemaining : 3;
+    var buzzPct = Math.round((buzzRemaining / 3) * 100);
     var buzzColor = buzzPct > 50 ? 'var(--accent3)' : 'var(--danger)';
     buzzTimerBar = '<div style="width:100%;max-width:900px;margin:0 auto 4px"><div style="display:flex;align-items:center;margin-bottom:2px"><span id="buzz-timer-text" style="font-weight:700;color:' + buzzColor + ';font-size:14px">⏱️ ' + buzzRemaining + 's - ' + BB.esc(buzzerName) + '</span></div>' +
       '<div style="background:#e0e4ea;border-radius:8px;height:6px;overflow:hidden"><div id="buzz-timer-fill" style="background:' + buzzColor + ';height:100%;border-radius:8px;width:' + buzzPct + '%;transition:width 0.5s linear"></div></div></div>';
@@ -391,6 +391,9 @@ BB.ui.hostLive = function (roomData) {
       '<span class="font-bungee" style="font-size:16px;color:var(--accent3)">' + hostScore + '</span></div>';
   }
 
+  // Timeout overlay
+  var isTimeout = lastAnswer && lastAnswer.timeout;
+
   // Unified layout for both solo and multiplayer (everything fits one screen)
   return '<div class="screen-live-host solo-screen">' + BB.ui.fsBtn() +
     '<div class="solo-header-row">' +
@@ -400,23 +403,22 @@ BB.ui.hostLive = function (roomData) {
     (isSingle ? '' : mpScorebar) +
     timerBar +
     buzzTimerBar +
-    '<div style="flex:1;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;overflow:hidden">' +
-      '<div class="question-display solo-question">' +
+    '<div style="flex:1;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;overflow-y:auto">' +
+      '<div class="host-question-card' + (isTimeout ? ' timed-out' : '') + '">' +
         (q.imageUrl ?
-          '<div class="solo-content-row">' +
-            '<div class="solo-image-col">' + BB.ui.qImg(q) + '</div>' +
-            '<div class="solo-text-col">' +
-              '<p style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px">Soalan ' + (qi + 1) + '</p>' +
-              '<h2 class="question-text">' + BB.esc(q.question) + '</h2>' +
+          '<div class="host-q-top">' +
+            '<div class="host-q-img">' + BB.ui.qImg(q) + '</div>' +
+            '<div class="host-q-text">' +
+              '<h2 class="host-q-title">' + BB.esc(q.question) + '</h2>' +
             '</div>' +
           '</div>'
         :
-          '<p style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px">Soalan ' + (qi + 1) + '</p>' +
-          '<h2 class="question-text">' + BB.esc(q.question) + '</h2>'
+          '<h2 class="host-q-title" style="text-align:center;margin-bottom:8px">' + BB.esc(q.question) + '</h2>'
         ) +
+        (isTimeout ? '<div class="timeout-overlay"><span>⏰ MASA TAMAT!</span></div>' : '') +
         '<div class="solo-options-grid">' + opts + '</div>' +
       '</div>' +
-      (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:500px;margin:4px auto 0">' + action + '</div>' : '') +
+      (action ? '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:500px;margin:4px auto 0;flex-shrink:0">' + action + '</div>' : '') +
     '</div>' +
   '</div>';
 };
@@ -472,15 +474,15 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
 
   // Someone buzzed - show pie timer for winner, "terlambat" for others
   if (buzzedBy && status === "buzzed") {
-    var buzzRemaining = roomData.buzzTimerRemaining != null ? roomData.buzzTimerRemaining : 2;
+    var buzzRemaining = roomData.buzzTimerRemaining != null ? roomData.buzzTimerRemaining : 3;
     var buzzerPlayerName = "";
     Object.entries(players).forEach(function (e) { if (e[0] === buzzedBy) buzzerPlayerName = e[1].name; });
 
     if (iWon) {
       // Winner sees pie countdown timer
-      var piePct = Math.round((buzzRemaining / 2) * 100);
+      var piePct = Math.round((buzzRemaining / 3) * 100);
       var pieColor = piePct > 50 ? '#00e5ff' : '#ff3e6c';
-      var pieDeg = Math.round((buzzRemaining / 2) * 360);
+      var pieDeg = Math.round((buzzRemaining / 3) * 360);
       return '<div class="screen-live-player"><div style="animation:popIn 0.3s ease;text-align:center;width:100%;max-width:400px">' +
         headerBar +
         '<div style="font-size:36px;margin-bottom:8px">🔥</div>' +
