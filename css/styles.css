@@ -659,6 +659,44 @@ textarea.bb-input { resize: vertical; }
   box-shadow: 0 2px 6px rgba(255,62,108,0.3);
 }
 
+/* ─── AI Image Search Picker ─── */
+.ai-img-wrap {
+  width: 100%;
+  margin-top: 8px;
+}
+.ai-img-results {
+  margin-top: 8px;
+}
+.ai-img-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 4px 0;
+}
+@media (max-width: 480px) {
+  .ai-img-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.ai-img-option {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  background: var(--bg-card);
+}
+.ai-img-option:hover {
+  border-color: #9c27b0;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(156,39,176,0.25);
+}
+.ai-img-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* ─── Question Image in Live Game ─── */
 .q-image-live {
   text-align: center;

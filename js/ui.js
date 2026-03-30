@@ -142,9 +142,12 @@ BB.ui.editor = function (title, questions, isEdit) {
           '<input class="bb-input" id="urlInput' + qi + '" placeholder="https://contoh.com/gambar.jpg" style="flex:1;padding:8px 12px;font-size:13px">' +
           '<button class="bb-btn" onclick="BB.app.attachUrl(' + qi + ')" style="background:var(--accent2);color:#fff;padding:8px 14px;font-size:13px;white-space:nowrap">Lampir</button>' +
         '</div>' +
-        '<div class="q-url-input" id="aiImgWrap' + qi + '" style="display:none">' +
-          '<input class="bb-input" id="aiImgPrompt' + qi + '" placeholder="cth: gambar gajah, bendera Malaysia" style="flex:1;padding:8px 12px;font-size:13px">' +
-          '<button class="bb-btn" onclick="BB.app.regenerateImage(' + qi + ')" style="background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;padding:8px 14px;font-size:13px;white-space:nowrap">🔍 Cari</button>' +
+        '<div class="ai-img-wrap" id="aiImgWrap' + qi + '" style="display:none">' +
+          '<div class="q-url-input" style="display:flex">' +
+            '<input class="bb-input" id="aiImgPrompt' + qi + '" placeholder="cth: bee, cat, Malaysia flag" style="flex:1;padding:8px 12px;font-size:13px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();BB.app.regenerateImage(' + qi + ')}">' +
+            '<button class="bb-btn ai-search-btn" onclick="BB.app.regenerateImage(' + qi + ')" style="background:linear-gradient(135deg,#9c27b0,#e040fb);color:#fff;padding:8px 14px;font-size:13px;white-space:nowrap">🔍 Cari</button>' +
+          '</div>' +
+          '<div id="aiImgResults' + qi + '" class="ai-img-results"></div>' +
         '</div>' +
       '</div>' +
       '<div class="options-grid">' + opts + '</div></div>';

@@ -364,23 +364,76 @@
     }
   };
 
-  // ─── REGENERATE IMAGE FOR SINGLE QUESTION (with custom prompt) ───
+  // ─── SEARCH IMAGES FROM WIKIMEDIA COMMONS ───
+  BB.app._searchImages = {};
+
   BB.app.regenerateImage = async function (qi) {
     var promptInput = document.getElementById("aiImgPrompt" + qi);
     var prompt = promptInput ? promptInput.value.trim() : "";
-    if (!prompt) { showToast("Sila masukkan apa gambar yang anda mahu. cth: gambar gajah", "error"); return; }
-    var searchBtn = document.querySelector("#aiImgWrap" + qi + " .bb-btn");
+    if (!prompt) { showToast("Sila masukkan kata kunci gambar. cth: lebah, gajah", "error"); return; }
+
+    var searchBtn = document.querySelector("#aiImgWrap" + qi + " .ai-search-btn");
     if (searchBtn) { searchBtn.disabled = true; searchBtn.innerHTML = "⏳ Mencari..."; }
+
+    var resultsDiv = document.getElementById("aiImgResults" + qi);
+    if (resultsDiv) resultsDiv.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:13px">⏳ Mencari gambar untuk "<b>' + BB.esc(prompt) + '</b>"...</div>';
+
     try {
-      var url = await BB.fire.regenerateImage(prompt);
-      S.editorQuestions[qi].imageUrl = url;
-      render();
-      showToast("Gambar berjaya dijana!");
+      var apiUrl = "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
+        encodeURIComponent(prompt + " file:jpg OR file:png OR file:jpeg") +
+        "&gsrnamespace=6&gsrlimit=12&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=300&format=json&origin=*";
+
+      var resp = await fetch(apiUrl);
+      var data = await resp.json();
+
+      var images = [];
+      if (data.query && data.query.pages) {
+        var pages = Object.values(data.query.pages);
+        pages.sort(function (a, b) { return (a.index || 0) - (b.index || 0); });
+        pages.forEach(function (page) {
+          if (page.imageinfo && page.imageinfo[0]) {
+            var info = page.imageinfo[0];
+            var mime = info.mime || "";
+            if (mime.indexOf("image/") === 0 && mime.indexOf("svg") === -1) {
+              if (info.thumburl && info.url) {
+                images.push({ thumb: info.thumburl, full: info.url });
+              }
+            }
+          }
+        });
+      }
+
+      if (resultsDiv) {
+        if (images.length === 0) {
+          resultsDiv.innerHTML = '<div style="text-align:center;padding:16px;color:var(--danger);font-size:13px">Tiada gambar ditemui. Cuba kata kunci lain (dalam Bahasa Inggeris mungkin lebih banyak hasil).</div>';
+        } else {
+          var html = '<div style="font-size:12px;color:var(--text-dim);padding:4px 0;font-weight:600">Pilih gambar (' + images.length + ' hasil):</div>' +
+            '<div class="ai-img-grid">';
+          images.forEach(function (img, i) {
+            html += '<div class="ai-img-option" onclick="BB.app.selectSearchImage(' + qi + ',' + i + ')">' +
+              '<img src="' + BB.esc(img.thumb) + '" alt="Pilihan ' + (i + 1) + '" onerror="this.parentElement.style.display=\'none\'">' +
+              '</div>';
+          });
+          html += '</div>';
+          resultsDiv.innerHTML = html;
+          BB.app._searchImages[qi] = images;
+        }
+      }
     } catch (e) {
-      console.error("Regenerate image error:", e);
-      showToast("Gagal menjana gambar: " + (e.message || "Cuba lagi."), "error");
-      if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = "🔍 Cari"; }
+      console.error("Image search error:", e);
+      if (resultsDiv) resultsDiv.innerHTML = '<div style="text-align:center;padding:12px;color:var(--danger);font-size:13px">Gagal mencari gambar. Cuba lagi.</div>';
     }
+
+    if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = "🔍 Cari"; }
+  };
+
+  BB.app.selectSearchImage = function (qi, index) {
+    var images = BB.app._searchImages[qi];
+    if (!images || !images[index]) return;
+    S.editorQuestions[qi].imageUrl = images[index].full;
+    delete BB.app._searchImages[qi];
+    render();
+    showToast("Gambar dipilih!");
   };
 
   BB.app.saveQuiz = async function () {
