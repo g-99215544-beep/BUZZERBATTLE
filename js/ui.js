@@ -178,6 +178,7 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
   for (var i = 0; i < 3; i++) slots += BB.ui.playerSlot(players[i], i);
   var isSingle = players.length === 0;
   var timerVal = (roomData && roomData.timerSeconds) || 30;
+  var shuffleOn = roomData && roomData.shuffleQuestions;
 
   return '<div class="screen-waiting">' + BB.ui.fsBtn() +
     '<h2 class="font-bungee" style="font-size:clamp(18px,4vw,24px);color:var(--accent3);margin-bottom:4px">⚡ WAITING ROOM</h2>' +
@@ -185,9 +186,9 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
     '<div class="room-code-box"><p style="color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:600">Kod Room</p>' +
       '<div class="room-code-display">' + roomCode + '</div>' +
       '<button class="bb-btn" onclick="BB.app.copyCode()" id="copyBtn" style="margin-top:14px;background:transparent;color:var(--accent2);border:1px solid var(--accent2);padding:6px 18px;font-size:12px">' + BB.SVG.copy + ' Salin</button></div>' +
-    // Timer setting
+    // Game settings
     '<div style="width:100%;max-width:500px;margin-bottom:24px;background:#ffffff;border-radius:16px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.06)">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">' +
         '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">⏱️</span><span style="font-weight:700;font-size:16px">Masa Setiap Soalan</span></div>' +
         '<select class="bb-input" id="timerSelect" onchange="BB.app.setTimer(this.value)" style="width:auto;padding:8px 14px;font-size:15px;font-weight:700">' +
           '<option value="15"' + (timerVal === 15 ? ' selected' : '') + '>15 saat</option>' +
@@ -197,6 +198,10 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
           '<option value="90"' + (timerVal === 90 ? ' selected' : '') + '>90 saat</option>' +
           '<option value="0"' + (timerVal === 0 ? ' selected' : '') + '>Tiada had masa</option>' +
         '</select>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">🔀</span><span style="font-weight:700;font-size:16px">Kocak Susunan Soalan</span></div>' +
+        '<label class="toggle-switch"><input type="checkbox" onchange="BB.app.setShuffle(this)"' + (shuffleOn ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
       '</div></div>' +
     '<div style="width:100%;max-width:500px;margin-bottom:32px">' +
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' + BB.SVG.users + '<span style="font-weight:700;font-size:16px">Pemain (' + players.length + '/3)</span></div>' +

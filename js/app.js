@@ -169,6 +169,7 @@
       // Auto transition
       if (data.status === "ended") {
         clearBuzzTimer();
+        clearPlayerSession();
         if (["liveHost", "livePlayer", "hostWaiting", "playerWaiting"].indexOf(S.screen) >= 0) {
           S.screen = "results";
         }
@@ -662,12 +663,49 @@
     BB.fire.setRoomField(S.roomCode, "timerSeconds", parseInt(val) || 0);
   };
 
+  BB.app.setShuffle = function (el) {
+    if (!S.roomCode) return;
+    BB.fire.setRoomField(S.roomCode, "shuffleQuestions", el.checked);
+  };
+
+  // Fisher-Yates shuffle
+  function shuffleArray(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function shuffleAnswerOptions(questions) {
+    return questions.map(function (q) {
+      var indices = q.options.map(function (_, i) { return i; });
+      var shuffled = shuffleArray(indices);
+      return {
+        question: q.question,
+        options: shuffled.map(function (i) { return q.options[i]; }),
+        correctIndex: shuffled.indexOf(q.correctIndex),
+        points: q.points || 10,
+        imageUrl: q.imageUrl || null,
+      };
+    });
+  }
+
   BB.app.startGame = async function () {
     if (!S.roomCode) return;
     try {
       var players = S.roomData && S.roomData.players ? S.roomData.players : {};
       var playerCount = Object.keys(players).length;
       var isSingle = playerCount === 0;
+
+      // Shuffle questions if host toggled it
+      var questions = S.roomData.questions || [];
+      if (S.roomData.shuffleQuestions) {
+        questions = shuffleArray(questions);
+      }
+      // Always shuffle answer options
+      questions = shuffleAnswerOptions(questions);
 
       // Initialize lives for all players
       var updates = {
@@ -676,6 +714,7 @@
         buzzedBy: null,
         lastAnswer: null,
         singlePlayer: isSingle,
+        questions: questions,
       };
 
       if (isSingle) {
@@ -758,12 +797,15 @@
       listenRoom(roomCode);
       S.roomCode = roomCode; S.playerId = pid; S.playerName = name;
       S.screen = "playerWaiting"; render();
+      // Save session for reconnect
+      savePlayerSession(roomCode, pid, name);
       showToast("Selamat datang, " + name + "!");
     } catch (e) { showToast("Gagal join.", "error"); }
   };
 
   BB.app.playerLeave = async function () {
     if (S.roomCode && S.playerId) try { await BB.fire.removePlayer(S.roomCode, S.playerId); } catch (e) {}
+    clearPlayerSession();
     cleanupRoom(); S.playerId = null; S.playerName = "";
     S.screen = "landing"; render();
     showToast("Keluar dari room.", "info");
@@ -921,6 +963,56 @@
   // ═══════════════════════════════════════
   //  INIT
   // ═══════════════════════════════════════
+  // ─── PERSISTENT PLAYER SESSION ───
+  var SESSION_KEY = "bb_player_session";
+
+  function savePlayerSession(roomCode, playerId, playerName) {
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode: roomCode, playerId: playerId, playerName: playerName }));
+    } catch (e) {}
+  }
+
+  function clearPlayerSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+
+  function getPlayerSession() {
+    try {
+      var s = localStorage.getItem(SESSION_KEY);
+      return s ? JSON.parse(s) : null;
+    } catch (e) { return null; }
+  }
+
+  async function tryRejoinSession() {
+    var session = getPlayerSession();
+    if (!session || !session.roomCode || !session.playerId) return false;
+    try {
+      var data = await BB.fire.getRoomOnce(session.roomCode);
+      if (!data) { clearPlayerSession(); return false; }
+      // Room ended - clear session
+      if (data.status === "ended") { clearPlayerSession(); return false; }
+      // Check player still exists in room
+      if (!data.players || !data.players[session.playerId]) { clearPlayerSession(); return false; }
+      // Rejoin!
+      S.roomCode = session.roomCode;
+      S.playerId = session.playerId;
+      S.playerName = session.playerName;
+      listenRoom(session.roomCode);
+      // Determine correct screen
+      if (data.status === "waiting") {
+        S.screen = "playerWaiting";
+      } else {
+        S.screen = "livePlayer";
+      }
+      render();
+      showToast("Disambung semula ke room!", "info");
+      return true;
+    } catch (e) {
+      clearPlayerSession();
+      return false;
+    }
+  }
+
   function init() {
     BB.fire.init();
     // Handle redirect login result (if user was redirected for auth)
@@ -931,7 +1023,7 @@
         console.error("Redirect auth error:", e.code, e.message);
       }
     });
-    BB.fire.onAuthChange(function (user) {
+    BB.fire.onAuthChange(async function (user) {
       S.user = user;
       if (user) {
         S.screen = "dashboard";
@@ -957,7 +1049,11 @@
           showToast("Pembayaran sedang diproses. Premium akan aktif sebentar lagi!", "info");
         }
       } else {
-        S.screen = "landing";
+        // Not logged in - try to rejoin an active player session
+        var rejoined = await tryRejoinSession();
+        if (!rejoined) {
+          S.screen = "landing";
+        }
         S.isPremium = false;
         S.premiumExpiry = 0;
         S.aiUsage = {};
