@@ -432,6 +432,14 @@ textarea.bb-input { resize: vertical; }
   display: flex; align-items: center; justify-content: center;
   z-index: 5; animation: popIn 0.3s ease;
 }
+/* ─── Buzz Badge ─── */
+.buzz-badge {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; border: 3px solid; border-radius: 14px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 16px rgba(255,62,108,0.15);
+}
+
 .timeout-overlay span {
   font-family: 'Bungee', cursive;
   font-size: clamp(24px, 5vw, 42px);

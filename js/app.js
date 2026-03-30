@@ -179,6 +179,7 @@
         if (S.screen === "playerWaiting") S.screen = "livePlayer";
         // Start 3-second buzz timer when status CHANGES to buzzed (host only)
         if (data.status === "buzzed" && prevStatus !== "buzzed" && data.buzzedBy && S.user && S.screen === "liveHost") {
+          BB.playBuzzerSound();
           startBuzzTimer();
         }
         // Clear buzz timer when answered
@@ -548,7 +549,7 @@
       if (buzzTimerText && buzzTimerFill) {
         var pct = Math.round((remaining / totalTicks) * 100);
         var buzzColor = pct > 50 ? 'var(--accent3)' : 'var(--danger)';
-        buzzTimerText.textContent = '⏱️ ' + secs + 's - ' + ((S.roomData.players && S.roomData.buzzedBy && S.roomData.players[S.roomData.buzzedBy]) ? S.roomData.players[S.roomData.buzzedBy].name : '');
+        buzzTimerText.textContent = secs + 's';
         buzzTimerText.style.color = buzzColor;
         buzzTimerFill.style.width = pct + '%';
         buzzTimerFill.style.background = buzzColor;

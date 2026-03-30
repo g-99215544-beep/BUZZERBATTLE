@@ -307,14 +307,24 @@ BB.ui.hostLive = function (roomData) {
       '<div style="background:#e0e4ea;border-radius:8px;height:6px;overflow:hidden"><div id="timer-fill" style="background:' + timerColor + ';height:100%;border-radius:8px;width:' + pct + '%;transition:width 1s linear"></div></div></div>';
   }
 
-  // Buzz timer bar (3 seconds for host to answer)
-  var buzzTimerBar = '';
+  // Buzz badge + timer bar (3 seconds for host to answer)
+  var buzzBadge = '';
   if (buzzedBy && status === "buzzed") {
     var buzzRemaining = roomData.buzzTimerRemaining != null ? roomData.buzzTimerRemaining : 3;
     var buzzPct = Math.round((buzzRemaining / 3) * 100);
     var buzzColor = buzzPct > 50 ? 'var(--accent3)' : 'var(--danger)';
-    buzzTimerBar = '<div style="width:100%;max-width:900px;margin:0 auto 4px"><div style="display:flex;align-items:center;margin-bottom:2px"><span id="buzz-timer-text" style="font-weight:700;color:' + buzzColor + ';font-size:14px">⏱️ ' + buzzRemaining + 's - ' + BB.esc(buzzerName) + '</span></div>' +
-      '<div style="background:#e0e4ea;border-radius:8px;height:6px;overflow:hidden"><div id="buzz-timer-fill" style="background:' + buzzColor + ';height:100%;border-radius:8px;width:' + buzzPct + '%;transition:width 0.5s linear"></div></div></div>';
+    // Find player index for color
+    var buzzerIdx = players.findIndex(function (p) { return p.id === buzzedBy; });
+    var buzzerChipColor = BB.SLOT_COLORS[buzzerIdx] || 'var(--accent)';
+    var buzzerEmoji = BB.PLAYER_EMOJIS[buzzerIdx] || '🔔';
+    buzzBadge = '<div style="width:100%;max-width:900px;margin:0 auto 4px">' +
+      '<div class="buzz-badge" style="border-color:' + buzzerChipColor + ';animation:popIn 0.3s ease">' +
+        '<span style="font-size:20px">' + buzzerEmoji + '</span>' +
+        '<span class="font-bungee" style="font-size:16px;color:' + buzzerChipColor + '">🔔 ' + BB.esc(buzzerName) + ' TEKAN BUZZER!</span>' +
+        '<span id="buzz-timer-text" class="font-bungee" style="font-size:14px;color:' + buzzColor + '">' + buzzRemaining + 's</span>' +
+      '</div>' +
+      '<div style="background:#e0e4ea;border-radius:8px;height:6px;overflow:hidden;margin-top:4px"><div id="buzz-timer-fill" style="background:' + buzzColor + ';height:100%;border-radius:8px;width:' + buzzPct + '%;transition:width 0.5s linear"></div></div>' +
+    '</div>';
   }
 
   // Options - unified for both solo and multiplayer
@@ -402,7 +412,7 @@ BB.ui.hostLive = function (roomData) {
     '</div>' +
     (isSingle ? '' : mpScorebar) +
     timerBar +
-    buzzTimerBar +
+    buzzBadge +
     '<div style="flex:1;display:flex;flex-direction:column;max-width:900px;margin:0 auto;width:100%;min-height:0;overflow-y:auto">' +
       '<div class="host-question-card' + (isTimeout ? ' timed-out' : '') + '">' +
         (q.imageUrl ?
