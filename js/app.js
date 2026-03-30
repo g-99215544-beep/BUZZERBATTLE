@@ -168,12 +168,21 @@
 
       // Auto transition
       if (data.status === "ended") {
+        clearBuzzTimer();
         if (["liveHost", "livePlayer", "hostWaiting", "playerWaiting"].indexOf(S.screen) >= 0) {
           S.screen = "results";
         }
       } else if (["buzzer_locked", "buzzer_open", "buzzed", "answered"].indexOf(data.status) >= 0) {
         if (S.screen === "hostWaiting") S.screen = "liveHost";
         if (S.screen === "playerWaiting") S.screen = "livePlayer";
+        // Start 2-second buzz timer when someone buzzes (host only)
+        if (data.status === "buzzed" && data.buzzedBy && S.user && S.screen === "liveHost") {
+          startBuzzTimer();
+        }
+        // Clear buzz timer when answered
+        if (data.status === "answered" || data.status === "buzzer_open") {
+          clearBuzzTimer();
+        }
       }
       // Skip full re-render if only timer changed (DOM updated directly by timer interval)
       if (timerOnly) return;
@@ -182,6 +191,7 @@
   }
   function cleanupRoom() {
     try { clearGameTimer(); } catch(e) {}
+    try { clearBuzzTimer(); } catch(e) {}
     if (roomListenerCode) { BB.fire.stopListenRoom(roomListenerCode); roomListenerCode = null; }
     S.roomData = null; S.roomCode = null;
   }
@@ -504,11 +514,74 @@
     showToast("Room dibatalkan.", "info");
   };
 
-  // Timer interval reference
+  // Timer interval references
   var timerInterval = null;
+  var buzzTimerInterval = null;
 
   function clearGameTimer() {
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function clearBuzzTimer() {
+    if (buzzTimerInterval) { clearInterval(buzzTimerInterval); buzzTimerInterval = null; }
+  }
+
+  function startBuzzTimer() {
+    clearBuzzTimer();
+    if (!S.roomData || !S.roomCode) return;
+    var remaining = 4; // 4 half-seconds = 2 seconds (update every 500ms for smooth pie)
+    S.roomData.buzzTimerRemaining = 2;
+    BB.fire.setRoomField(S.roomCode, "buzzTimerRemaining", 2);
+    buzzTimerInterval = setInterval(async function () {
+      if (!S.roomData || S.roomData.status !== "buzzed") { clearBuzzTimer(); return; }
+      remaining--;
+      var secs = Math.ceil(remaining / 2);
+      S.roomData.buzzTimerRemaining = secs;
+      // Update pie timer DOM directly (host)
+      var buzzTimerText = document.getElementById('buzz-timer-text');
+      var buzzTimerFill = document.getElementById('buzz-timer-fill');
+      if (buzzTimerText && buzzTimerFill) {
+        var pct = Math.round((remaining / 4) * 100);
+        var buzzColor = pct > 50 ? 'var(--accent3)' : 'var(--danger)';
+        buzzTimerText.textContent = '⏱️ ' + secs + 's - ' + ((S.roomData.players && S.roomData.buzzedBy && S.roomData.players[S.roomData.buzzedBy]) ? S.roomData.players[S.roomData.buzzedBy].name : '');
+        buzzTimerText.style.color = buzzColor;
+        buzzTimerFill.style.width = pct + '%';
+        buzzTimerFill.style.background = buzzColor;
+      }
+      // Sync to Firebase for player pie timer
+      if (remaining % 2 === 0) {
+        BB.fire.setRoomField(S.roomCode, "buzzTimerRemaining", secs);
+      }
+      if (remaining <= 0) {
+        clearBuzzTimer();
+        // Time's up - auto wrong for buzzed player
+        await handleBuzzTimeout();
+      }
+    }, 500);
+  }
+
+  async function handleBuzzTimeout() {
+    if (!S.roomCode || !S.roomData) return;
+    var buzzedBy = S.roomData.buzzedBy;
+    if (!buzzedBy) return;
+    var qi = S.roomData.currentQuestionIndex || 0;
+    var q = (S.roomData.questions || [])[qi];
+    if (!q) return;
+    BB.playWrongBuzzer();
+    var currentLives = (S.roomData.players && S.roomData.players[buzzedBy] && S.roomData.players[buzzedBy].lives != null) ? S.roomData.players[buzzedBy].lives : 3;
+    await BB.fire.updateRoom(S.roomCode, {
+      status: "answered",
+      buzzTimerRemaining: 0,
+      lastAnswer: {
+        playerId: buzzedBy,
+        playerName: (S.roomData.players && S.roomData.players[buzzedBy]) ? S.roomData.players[buzzedBy].name : "Pemain",
+        selectedIndex: -1,
+        correct: false,
+        points: q.points || 10,
+        timeout: true,
+      },
+      ["players/" + buzzedBy + "/lives"]: Math.max(0, currentLives - 1),
+    });
   }
 
   function startGameTimer() {
@@ -716,7 +789,9 @@
       }
     }
     var won = await BB.fire.tryBuzz(S.roomCode, S.playerId);
-    if (won) await BB.fire.setRoomField(S.roomCode, "status", "buzzed");
+    if (won) {
+      await BB.fire.updateRoom(S.roomCode, { status: "buzzed", buzzTimerRemaining: 2 });
+    }
   };
 
   // Single player answer (host answers directly)
@@ -759,6 +834,7 @@
   BB.app.hostAnswer = async function (selectedIndex) {
     if (!S.roomCode || !S.roomData) return;
     clearGameTimer();
+    clearBuzzTimer();
     var buzzedBy = S.roomData.buzzedBy;
     if (!buzzedBy) return;
     var questions = S.roomData.questions || [];

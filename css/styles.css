@@ -345,6 +345,17 @@ textarea.bb-input { resize: vertical; }
   display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
   margin-bottom: 12px;
 }
+/* ─── Compact Multiplayer Scorebar ─── */
+.mp-scorebar {
+  display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mp-score-chip {
+  background: #ffffff; border-radius: 10px; padding: 4px 12px;
+  display: flex; align-items: center; gap: 6px;
+  border: 2px solid; font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
 .scoreboard-chip-big {
   background: #ffffff; border-radius: 16px; padding: 12px 24px;
   display: flex; align-items: center; gap: 12px; min-width: 140px;
@@ -452,6 +463,27 @@ textarea.bb-input { resize: vertical; }
   box-shadow: 0 8px 30px rgba(255,62,108,0.4);
 }
 .buzzer-button:active { transform: scale(0.92); }
+
+/* ─── Pie Timer (2-second buzz countdown) ─── */
+.pie-timer {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: conic-gradient(var(--pie-color, #00e5ff) var(--pie-deg, 360deg), #e0e4ea 0deg);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transition: --pie-deg 0.5s linear;
+  position: relative;
+}
+.pie-timer::after {
+  content: '';
+  width: 100px; height: 100px; border-radius: 50%;
+  background: var(--bg, #f8f9fc);
+  position: absolute;
+}
+.pie-timer-text {
+  font-size: 36px; color: var(--text);
+  position: relative; z-index: 1;
+}
 
 .answer-option-btn {
   background: #ffffff; border: 2px solid; border-radius: 16px;
