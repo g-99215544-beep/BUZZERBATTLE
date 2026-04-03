@@ -72,26 +72,8 @@ BB.playWrongBuzzer = function () {
 
 BB.playBuzzerSound = function () {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Sharp buzzer hit - loud and attention-grabbing
-    var osc = ctx.createOscillator();
-    var osc2 = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.15);
-    osc2.type = "square";
-    osc2.frequency.setValueAtTime(600, ctx.currentTime);
-    osc2.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-    osc.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc2.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.25);
-    osc2.stop(ctx.currentTime + 0.25);
+    var audio = new Audio('wrong-answer-sound-effect.mp3');
+    audio.play().catch(function(e) {});
   } catch (e) {}
 };
 

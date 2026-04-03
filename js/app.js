@@ -186,6 +186,10 @@
         if (data.status === "answered" || data.status === "buzzer_open") {
           clearBuzzTimer();
         }
+        // Clear game timer when answered (handles case where player answers directly)
+        if (data.status === "answered") {
+          clearGameTimer();
+        }
       }
       // Skip full re-render if only timer changed (DOM updated directly by timer interval)
       if (timerOnly) return;
@@ -497,6 +501,7 @@
         buzzedBy: null,
         maxPlayers: 3,
         timerSeconds: 30,
+        answerMode: "host",
         questions: qs.questions.map(function (q) {
           var qData = { question: q.question, options: q.options, correctIndex: q.correctIndex, points: q.points || 10 };
           if (q.imageUrl) qData.imageUrl = q.imageUrl;
@@ -682,6 +687,11 @@
     BB.fire.setRoomField(S.roomCode, "shuffleQuestions", el.checked);
   };
 
+  BB.app.setAnswerMode = function (val) {
+    if (!S.roomCode) return;
+    BB.fire.setRoomField(S.roomCode, "answerMode", val);
+  };
+
   // Fisher-Yates shuffle
   function shuffleArray(arr) {
     var a = arr.slice();
@@ -846,8 +856,46 @@
     }
     var won = await BB.fire.tryBuzz(S.roomCode, S.playerId);
     if (won) {
+      BB.playBuzzerSound();
       await BB.fire.updateRoom(S.roomCode, { status: "buzzed", buzzTimerRemaining: BUZZ_SECONDS });
     }
+  };
+
+  // Player answers directly (answerMode === "player")
+  BB.app.playerAnswer = async function (selectedIndex) {
+    if (!S.roomCode || !S.roomData || !S.playerId) return;
+    var buzzedBy = S.roomData.buzzedBy;
+    if (!buzzedBy || buzzedBy !== S.playerId) return;
+    var questions = S.roomData.questions || [];
+    var qi = S.roomData.currentQuestionIndex || 0;
+    var q = questions[qi];
+    if (!q) return;
+    var correct = selectedIndex === q.correctIndex;
+    var pts = q.points || 10;
+
+    if (correct) {
+      BB.playCorrectSound();
+      await BB.fire.updateScore(S.roomCode, S.playerId, pts);
+    } else {
+      BB.playWrongBuzzer();
+    }
+
+    var updates = {
+      status: "answered",
+      timerRemaining: 0,
+      lastAnswer: {
+        playerId: S.playerId,
+        playerName: (S.roomData.players && S.roomData.players[S.playerId]) ? S.roomData.players[S.playerId].name : S.playerName,
+        selectedIndex: selectedIndex,
+        correct: correct,
+        points: pts,
+      },
+    };
+    if (!correct) {
+      var currentLives = (S.roomData.players && S.roomData.players[S.playerId] && S.roomData.players[S.playerId].lives != null) ? S.roomData.players[S.playerId].lives : 3;
+      updates["players/" + S.playerId + "/lives"] = Math.max(0, currentLives - 1);
+    }
+    await BB.fire.updateRoom(S.roomCode, updates);
   };
 
   // Single player answer (host answers directly)

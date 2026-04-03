@@ -179,6 +179,7 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
   var isSingle = players.length === 0;
   var timerVal = (roomData && roomData.timerSeconds) || 30;
   var shuffleOn = roomData && roomData.shuffleQuestions;
+  var answerMode = (roomData && roomData.answerMode) || "host";
 
   return '<div class="screen-waiting">' + BB.ui.fsBtn() +
     '<h2 class="font-bungee" style="font-size:clamp(18px,4vw,24px);color:var(--accent3);margin-bottom:4px">⚡ WAITING ROOM</h2>' +
@@ -199,9 +200,16 @@ BB.ui.hostWaiting = function (roomCode, roomData, quizTitle) {
           '<option value="0"' + (timerVal === 0 ? ' selected' : '') + '>Tiada had masa</option>' +
         '</select>' +
       '</div>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">' +
         '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">🔀</span><span style="font-weight:700;font-size:16px">Kocak Susunan Soalan</span></div>' +
         '<label class="toggle-switch"><input type="checkbox" onchange="BB.app.setShuffle(this)"' + (shuffleOn ? ' checked' : '') + '><span class="toggle-slider"></span></label>' +
+      '</div>' +
+      '<div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:24px">✏️</span><span style="font-weight:700;font-size:16px">Mod Jawapan</span></div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button onclick="BB.app.setAnswerMode(\'host\')" style="flex:1;padding:10px 8px;border-radius:12px;border:2px solid ' + (answerMode === 'host' ? 'var(--accent2)' : 'var(--border)') + ';background:' + (answerMode === 'host' ? 'rgba(0,153,221,0.08)' : '#f5f7fa') + ';font-weight:700;font-size:13px;cursor:pointer;color:' + (answerMode === 'host' ? 'var(--accent2)' : 'var(--text-dim)') + '">🎤 Host tekan jawapan</button>' +
+          '<button onclick="BB.app.setAnswerMode(\'player\')" style="flex:1;padding:10px 8px;border-radius:12px;border:2px solid ' + (answerMode === 'player' ? 'var(--accent2)' : 'var(--border)') + ';background:' + (answerMode === 'player' ? 'rgba(0,153,221,0.08)' : '#f5f7fa') + ';font-weight:700;font-size:13px;cursor:pointer;color:' + (answerMode === 'player' ? 'var(--accent2)' : 'var(--text-dim)') + '">📱 Murid tekan sendiri</button>' +
+        '</div>' +
       '</div></div>' +
     '<div style="width:100%;max-width:500px;margin-bottom:32px">' +
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' + BB.SVG.users + '<span style="font-weight:700;font-size:16px">Pemain (' + players.length + '/3)</span></div>' +
@@ -270,6 +278,7 @@ BB.ui.hostLive = function (roomData) {
   var isSingle = !players.length || roomData.singlePlayer;
   var timerSeconds = roomData.timerSeconds || 0;
   var timerRemaining = roomData.timerRemaining != null ? roomData.timerRemaining : -1;
+  var answerMode = roomData.answerMode || "host";
 
   if (!q) return '<div class="screen-live-host">Tiada soalan.</div>';
 
@@ -348,13 +357,24 @@ BB.ui.hostLive = function (roomData) {
       });
     }
   } else if (buzzedBy && status === "buzzed") {
-    // Multiplayer buzzed: host clicks answer for player
-    q.options.forEach(function (opt, oi) {
-      var optColor = BB.OPT_COLORS[oi];
-      opts += '<button class="answer-option-btn" onclick="BB.app.hostAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
-        '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
-        '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
-    });
+    if (answerMode === "player") {
+      // Player answer mode: host waits for player to select answer
+      var buzzerIdx2 = players.findIndex(function (p) { return p.id === buzzedBy; });
+      var buzzerChipColor2 = BB.SLOT_COLORS[buzzerIdx2] || 'var(--accent)';
+      opts = '<div style="text-align:center;padding:24px 0;animation:pulse 1s infinite">' +
+        '<div style="font-size:36px;margin-bottom:8px">📱</div>' +
+        '<p class="font-bungee" style="font-size:18px;color:' + buzzerChipColor2 + '">Menunggu ' + BB.esc(buzzerName) + ' jawab...</p>' +
+        '<p style="color:var(--text-dim);font-size:14px;margin-top:8px">Murid sedang memilih jawapan</p>' +
+      '</div>';
+    } else {
+      // Host answer mode: host clicks answer for player
+      q.options.forEach(function (opt, oi) {
+        var optColor = BB.OPT_COLORS[oi];
+        opts += '<button class="answer-option-btn" onclick="BB.app.hostAnswer(' + oi + ')" style="border-color:' + optColor + '">' +
+          '<span class="font-bungee" style="font-size:22px;color:' + optColor + ';width:40px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+          '<span style="font-size:clamp(18px,2.5vw,24px)">' + BB.esc(opt) + '</span></button>';
+      });
+    }
   } else if (lastAnswer) {
     // After answer: show correct/wrong highlights
     q.options.forEach(function (opt, oi) {
@@ -449,6 +469,7 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
   var myLives = myData.lives != null ? myData.lives : 3;
   var iWon = buzzedBy === playerId;
   var amEliminated = myLives <= 0;
+  var answerMode = roomData.answerMode || "host";
 
   if (!q) return '<div class="screen-live-player"><p style="font-size:24px;font-weight:700">Menunggu...</p></div>';
 
@@ -493,6 +514,31 @@ BB.ui.playerLive = function (roomData, playerId, playerName) {
       var piePct = Math.round((buzzRemaining / 3) * 100);
       var pieColor = piePct > 50 ? '#00e5ff' : '#ff3e6c';
       var pieDeg = Math.round((buzzRemaining / 3) * 360);
+
+      if (answerMode === "player") {
+        // Player mode: show answer options for student to select
+        var playerOpts = '';
+        if (q) {
+          q.options.forEach(function (opt, oi) {
+            var optColor = BB.OPT_COLORS[oi];
+            playerOpts += '<button onclick="BB.app.playerAnswer(' + oi + ')" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:14px;border:2px solid ' + optColor + ';background:#fff;cursor:pointer;text-align:left;margin-bottom:8px;font-size:clamp(15px,3.5vw,18px);font-weight:600">' +
+              '<span class="font-bungee" style="font-size:20px;color:' + optColor + ';width:32px;flex-shrink:0;text-align:center">' + BB.OPT_LABELS[oi] + '</span>' +
+              '<span>' + BB.esc(opt) + '</span>' +
+            '</button>';
+          });
+        }
+        return '<div class="screen-live-player"><div style="animation:popIn 0.3s ease;text-align:center;width:100%;max-width:400px">' +
+          headerBar +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">' +
+            '<p class="font-bungee" style="font-size:20px;color:var(--success)">🔥 ANDA MENANG BUZZ!</p>' +
+            '<div class="pie-timer" id="pie-timer" style="--pie-deg:' + pieDeg + 'deg;--pie-color:' + pieColor + ';width:44px;height:44px;flex-shrink:0">' +
+              '<span class="pie-timer-text font-bungee" id="pie-timer-text" style="font-size:14px">' + buzzRemaining + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="text-align:left">' + playerOpts + '</div>' +
+        '</div></div>';
+      }
+
       return '<div class="screen-live-player"><div style="animation:popIn 0.3s ease;text-align:center;width:100%;max-width:400px">' +
         headerBar +
         '<div style="font-size:36px;margin-bottom:8px">🔥</div>' +
