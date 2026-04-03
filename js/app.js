@@ -190,6 +190,15 @@
         if (data.status === "answered") {
           clearGameTimer();
         }
+        // Play correct/wrong sound on HOST when player answers directly (answerMode === "player")
+        if (data.status === "answered" && prevStatus === "buzzed" && S.user && S.screen === "liveHost" &&
+            data.answerMode === "player" && data.lastAnswer && !data.lastAnswer.timeout) {
+          if (data.lastAnswer.correct) {
+            BB.playCorrectSound();
+          } else {
+            BB.playWrongBuzzer();
+          }
+        }
       }
       // Skip full re-render if only timer changed (DOM updated directly by timer interval)
       if (timerOnly) return;
@@ -856,7 +865,6 @@
     }
     var won = await BB.fire.tryBuzz(S.roomCode, S.playerId);
     if (won) {
-      BB.playBuzzerSound();
       await BB.fire.updateRoom(S.roomCode, { status: "buzzed", buzzTimerRemaining: BUZZ_SECONDS });
     }
   };
@@ -874,10 +882,7 @@
     var pts = q.points || 10;
 
     if (correct) {
-      BB.playCorrectSound();
       await BB.fire.updateScore(S.roomCode, S.playerId, pts);
-    } else {
-      BB.playWrongBuzzer();
     }
 
     var updates = {
