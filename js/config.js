@@ -55,18 +55,8 @@ BB.SVG = {
 // ─── Sound Effects (generated via Web Audio API) ───
 BB.playWrongBuzzer = function () {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    osc.frequency.setValueAtTime(100, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.5);
+    var audio = new Audio('wrong_5.mp3');
+    audio.play().catch(function(e) {});
   } catch (e) {}
 };
 
@@ -79,19 +69,8 @@ BB.playBuzzerSound = function () {
 
 BB.playCorrectSound = function () {
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(523, ctx.currentTime);
-    osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
-    osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
+    var audio = new Audio('correct.mp3');
+    audio.play().catch(function(e) {});
   } catch (e) {}
 };
 
